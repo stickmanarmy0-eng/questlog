@@ -65,7 +65,23 @@ textarea{min-height:110px;resize:vertical}
 p{margin:0;color:var(--muted);font-size:14px}
 #toast{position:fixed;z-index:5;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translate(-50%,-140%);width:max-content;max-width:88vw;background:var(--text);color:#11131c;font-weight:700;padding:10px 15px;border-radius:13px;transition:transform .25s}
 #toast.on{transform:translate(-50%,0)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#rewind{position:fixed;inset:0;z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(env(safe-area-inset-top) + 20px) 26px calc(env(safe-area-inset-bottom) + 20px);text-align:center;background:radial-gradient(circle at 50% 36%,#2b1747 0,#0b0812 48%,#000 100%);overflow-y:auto}
+#rewind.on{display:flex;animation:rwIn .7s ease both}
+#rewind svg{width:170px;height:170px;flex:none;filter:drop-shadow(0 0 22px #9a5cff)}
+#rewind .hand{transform-origin:60px 60px;animation:rwSpin 1.1s linear 3 reverse}
+#rewind .hand.b{animation-duration:.37s;animation-iteration-count:9}
+#rwNum{font-size:58px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+#rwHead{font-size:22px;font-weight:800;margin:0}
+#rewind p{color:#c9c0dc;font-size:15px;max-width:32ch}
+#rewind ul{list-style:none;margin:0;padding:0;color:#e5dcff;font-weight:700}
+#rwLate{display:flex;flex-direction:column;align-items:center;gap:12px;animation:rwLate .6s ease 3.3s both}
+#rwGo{background:#b98cff;color:#160b28;min-width:190px}
+.trial{padding:13px;border-radius:14px;border:1px solid #9a5cff;background:#21172f}
+.trial b{display:block}.trial span{font-size:13px;color:#c9c0dc}
+@keyframes rwSpin{to{transform:rotate(360deg)}}
+@keyframes rwIn{from{opacity:0;filter:brightness(4)}}
+@keyframes rwLate{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}#rewind *,#rewind{animation:none!important}}
 </style>
 </head>
 <body>
@@ -90,6 +106,12 @@ p{margin:0;color:var(--muted);font-size:14px}
   </nav>
 </div>
 <div id="toast" role="status"></div>
+<div id="rewind" role="dialog" aria-modal="true" aria-labelledby="rwHead">
+  <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="#0b0812" stroke="#b98cff" stroke-width="3"/><circle cx="60" cy="60" r="44" fill="none" stroke="#b98cff" stroke-width="5" stroke-dasharray="2 21.04"/><path d="M60 8 66 34 52 50 64 66 56 112" fill="none" stroke="#efe7ff" stroke-width="1.6"/><line class="hand" x1="60" y1="60" x2="60" y2="30" stroke="#efe7ff" stroke-width="5" stroke-linecap="round"/><line class="hand b" x1="60" y1="60" x2="60" y2="18" stroke="#b98cff" stroke-width="3" stroke-linecap="round"/></svg>
+  <div id="rwNum"></div>
+  <h2 id="rwHead" style="color:#fff"></h2>
+  <div id="rwLate"><p id="rwText"></p><ul id="rwList"></ul><button class="btn" id="rwGo">Begin again</button></div>
+</div>
 <script>
 const KEY='questlog.v1';
 const DIFF={easy:{label:'Easy',xp:10,coins:5},medium:{label:'Medium',xp:25,coins:10},hard:{label:'Hard',xp:50,coins:20}};
@@ -121,11 +143,15 @@ function allDone(){const d=dailies();return d.length>0&&d.every(t=>t.doneOn===to
 function rollover(){
   S.tasks=S.tasks.filter(t=>t.repeat==='daily'||!t.doneOn||t.doneOn===today());
   if(S.undo&&S.undo.day!==today())S.undo=null;
+  if(S.fallen&&S.fallen.day!==today()){
+    S.streak=Math.floor(S.fallen.streak/7)*7;S.lastDone=S.streak?yesterday():null;S.fallen=null;
+    toast(S.streak?'Back to your '+S.streak+'-day checkpoint':'Your streak starts fresh');
+  }
   if(S.lastDone&&S.streak>0){
     const missed=gapDays(S.lastDone,today())-1;
     if(missed>0){
       if(S.shields>=missed){S.shields-=missed;S.lastDone=yesterday();toast(missed===1?'A shield saved your streak':missed+' shields saved your streak')}
-      else{S.streak=0;toast('New streak starts today. You get this.')}
+      else{S.loops=(S.loops||0)+1;S.fallen={streak:S.streak,day:today(),seen:false,missed:dailies().filter(t=>t.doneOn!==yesterday()).map(t=>t.name).slice(0,4)};S.streak=0}
     }
   }
   save();
@@ -133,12 +159,13 @@ function rollover(){
 function settleDay(){
   const t=today();
   if(allDone()&&S.lastDone!==t){
-    S.undo={day:t,streak:S.streak,shields:S.shields,lastDone:S.lastDone,best:S.best};
-    S.streak++;S.best=Math.max(S.best||0,S.streak);S.lastDone=t;
+    S.undo={day:t,streak:S.streak,shields:S.shields,lastDone:S.lastDone,best:S.best,fallen:S.fallen||null};
+    const back=S.fallen&&S.fallen.day===t;
+    S.streak=back?S.fallen.streak+1:S.streak+1;S.fallen=null;S.best=Math.max(S.best||0,S.streak);S.lastDone=t;
     if(S.streak%7===0&&S.shields<MAX_SHIELDS){S.shields++;toast('7-day streak! You earned a shield')}
-    else toast('All dailies done. Your chest is ready!');
+    else toast(back?'Timeline restored: '+S.streak+'-day streak!':'All dailies done. Your chest is ready!');
   }else if(!allDone()&&S.lastDone===t&&S.undo&&S.undo.day===t){
-    Object.assign(S,{streak:S.undo.streak,shields:S.undo.shields,lastDone:S.undo.lastDone,best:S.undo.best});S.undo=null;
+    Object.assign(S,{streak:S.undo.streak,shields:S.undo.shields,lastDone:S.undo.lastDone,best:S.undo.best,fallen:S.undo.fallen});S.undo=null;
   }
 }
 function toggle(id){
@@ -173,7 +200,8 @@ function taskRow(t){
   <button class="x" data-del-task="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">×</button></div>`}
 function viewToday(){
   const ds=dailies(),once=S.tasks.filter(t=>t.repeat!=='daily'),n=ds.filter(t=>t.doneOn===today()).length,opened=S.chestOn===today(),ready=allDone()&&!opened;
-  return `<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
+  const trial=S.fallen?`<div class="trial"><b>Second chance: loop ${S.loops||1}</b><span>Finish every daily today to restore your ${S.fallen.streak}-day streak.</span></div>`:'';
+  return `${trial}<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
   <h2>Daily quests</h2>${ds.map(taskRow).join('')||'<p>Add a daily quest to start your streak.</p>'}
   ${once.length?'<h2>One-time quests</h2>'+once.map(taskRow).join(''):''}
   <h2>Add a quest</h2><form id="addTask"><input id="taskName" maxlength="80" required placeholder="Take out the trash" aria-label="Quest name">
@@ -186,7 +214,7 @@ function viewMore(){
   return `<h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
   <button class="btn main" id="copy">Copy backup code</button><textarea id="out" readonly aria-label="Backup code">${esc(JSON.stringify(S))}</textarea>
   <h2>Restore a backup</h2><p>This replaces everything currently in the app.</p><textarea id="in" placeholder="Paste a backup code" aria-label="Paste a backup code"></textarea><button class="btn" id="restore">Restore backup</button>
-  <h2>Stats</h2><p>Best streak: ${S.best||0} days · Total XP: ${S.xp}</p>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
+  <h2>Stats</h2><p>Best streak: ${S.best||0} days · Total XP: ${S.xp} · Loops: ${S.loops||0}</p><button class="btn" id="preview">Preview the rewind</button>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
 function render(){
   const L=levelInfo(S.xp),pct=Math.round(L.into/L.need*100);
   level.textContent=L.level;title.textContent=TITLES[Math.min(Math.floor((L.level-1)/3),TITLES.length-1)];
@@ -203,6 +231,7 @@ view.addEventListener('click',async e=>{
   else if(D.delReward){S.rewards=S.rewards.filter(r=>r.id!==D.delReward);commit()}
   else if(D.buy){const r=S.rewards.find(x=>x.id===D.buy);if(r&&S.coins>=r.cost){S.coins-=r.cost;blip(700);toast('Enjoy: '+r.name);commit()}}
   else if(b.id==='chest')openChest();
+  else if(b.id==='preview')showRewind({streak:Math.max(S.streak,12),missed:dailies().slice(0,3).map(t=>t.name)},true);
   else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
   else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
 });
@@ -211,9 +240,23 @@ view.addEventListener('submit',e=>{
   if(e.target.id==='addTask'){const name=taskName.value.trim();if(name){S.tasks.push({id:uid(),name,diff:taskDiff.value,repeat:taskRepeat.value,doneOn:null});settleDay();commit()}}
   if(e.target.id==='addReward'){const name=rewardName.value.trim(),cost=Math.floor(+rewardCost.value);if(name&&cost>0){S.rewards.push({id:uid(),name,cost});commit()}}
 });
+function showRewind(f,demo){
+  const el=document.getElementById('rewind'),n=document.getElementById('rwNum');
+  rwHead.textContent='Your timeline ended';
+  rwText.textContent=demo?'This is a preview. Your progress has not changed.':'You came back with your memory. Finish every daily today to restore your '+f.streak+'-day streak. Fail, and you return to your last 7-day checkpoint.';
+  rwList.innerHTML=(f.missed||[]).map(m=>'<li>'+esc(m)+'</li>').join('');
+  el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  [440,330,247,165].forEach((h,i)=>setTimeout(()=>blip(h),i*420));
+  let v=f.streak;n.textContent=v;clearInterval(showRewind.t);
+  const step=Math.max(1,Math.ceil(f.streak/24));
+  showRewind.t=setInterval(()=>{v=Math.max(0,v-step);n.textContent=v;if(!v)clearInterval(showRewind.t)},2800/Math.ceil(f.streak/step));
+  rwGo.onclick=()=>{el.classList.remove('on');if(!demo&&S.fallen){S.fallen.seen=true;commit()}};
+  rwGo.focus({preventScroll:true});
+}
+function maybeRewind(){if(S.fallen&&!S.fallen.seen)showRewind(S.fallen)}
 let seen=today();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&seen!==today()){seen=today();rollover();render()}});
-rollover();render();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&seen!==today()){seen=today();rollover();render();maybeRewind()}});
+rollover();render();maybeRewind();
 if('serviceWorker'in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 </script>
 </body>
