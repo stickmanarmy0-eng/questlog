@@ -37,8 +37,8 @@ header{padding:calc(var(--top) + 14px) 16px 14px;background:var(--panel);border-
 .who span{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .bar{height:13px;margin-top:12px;border-radius:9px;background:#0c0e15;overflow:hidden}
 .bar i{display:block;height:100%;min-width:6px;border-radius:9px;background:linear-gradient(90deg,var(--xp2),var(--xp));transition:width .45s cubic-bezier(.2,.9,.3,1.2)}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.stat{background:#141722;border-radius:12px;padding:7px 10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.stat{background:#141722;border-radius:12px;padding:7px 8px;min-width:0}
 .stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
@@ -110,7 +110,8 @@ main>*{flex:none}
     </div>
     <div class="bar" role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="100" id="barWrap"><i id="bar"></i></div>
     <div class="stats">
-      <div class="stat"><b id="streak"></b><span>day streak</span></div>
+      <div class="stat"><b id="streak"></b><span>streak</span></div>
+      <div class="stat"><b id="timelineN"></b><span>timeline</span></div>
       <div class="stat"><b id="shields"></b><span>shields</span></div>
       <div class="stat"><b id="coins"></b><span>coins</span></div>
     </div>
@@ -137,6 +138,7 @@ const KEY='questlog.v1';
 const DIFF={easy:{label:'Easy',xp:10,coins:5},medium:{label:'Medium',xp:25,coins:10},hard:{label:'Hard',xp:50,coins:20}};
 const TITLES=['Rookie','Tidy Apprentice','Task Runner','Chore Slayer','Routine Knight','Habit Hero','Household Legend'];
 const MAX_SHIELDS=3;
+const RANKS=[{name:'Unlit',at:0,bonus:0},{name:'Spark',at:1,bonus:0},{name:'Ember',at:3,bonus:10},{name:'Flame',at:7,bonus:25},{name:'Blaze',at:14,bonus:50},{name:'Starfire',at:30,bonus:100}];
 let tab='today',memory=null,storageOK=true;
 const FLOORS=[
  {n:6,name:'Asterope',goal:10,unit:'quests',trial:'Climb out of the great basement. Complete 10 quests.',prize:{coins:50},prizeText:'50 coins'},
@@ -163,7 +165,8 @@ function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(valid(s))re
 function save(){memory=JSON.stringify(S);try{localStorage.setItem(KEY,memory);storageOK=true}catch(e){storageOK=false}}
 let S=load();
 
-function ensure(){S.tower=S.tower||{floor:0,p:0,insight:0,dayOn:null,green:null};S.loopLog=S.loopLog||[]}
+function ensure(){S.tower=S.tower||{floor:0,p:0,insight:0,dayOn:null,green:null};S.loopLog=S.loopLog||[];
+  if(S.timeline===undefined){S.timeline=S.streak||0;S.bestTimeline=S.streak||0;S.lastFull=S.lastDone||null;S.lastActive=S.lastDone||null;S.started=!!S.lastDone;S.lastRoll=today();S.undo=null;S.undoS=null}}
 function climbGain(t){const T=S.tower,hard=t.diff==='hard';switch(T.floor){case 0:case 2:return 1;case 3:return (hard?2:1)+T.insight;case 4:{const b={medium:10,hard:30}[t.diff]||0;return b?b+Math.min(S.streak,10)+5*T.insight:0}default:return 0}}
 function addClimb(n){const T=S.tower,F=FLOORS[T.floor];if(!F||n<=0)return;T.p+=n;if(T.p<F.goal)return;
   T.floor++;T.p=0;T.insight=0;const P=F.prize;S.coins+=P.coins||0;S.xp+=P.xp||0;if(P.shield)S.shields=Math.min(MAX_SHIELDS,S.shields+P.shield);
@@ -173,34 +176,51 @@ function levelInfo(xp){let level=1,left=xp,need=100;while(left>=need){left-=need
 function dailies(){return S.tasks.filter(t=>t.repeat==='daily')}
 function allDone(){const d=dailies();return d.length>0&&d.every(t=>t.doneOn===today())}
 
+function rankInfo(n){let i=0;RANKS.forEach((r,k)=>{if(n>=r.at)i=k});return{i,rank:RANKS[i],next:RANKS[i+1]}}
 function rollover(){
-  ensure();
-  S.tasks=S.tasks.filter(t=>t.repeat==='daily'||!t.doneOn||t.doneOn===today());
-  if(S.undo&&S.undo.day!==today())S.undo=null;
-  if(S.fallen&&S.fallen.day!==today()){
-    S.streak=Math.floor(S.fallen.streak/7)*7;S.lastDone=S.streak?yesterday():null;S.fallen=null;
-    toast(S.streak?'Back to your '+S.streak+'-day checkpoint':'Your streak starts fresh');
+  ensure();const t=today(),y=yesterday();
+  S.tasks=S.tasks.filter(x=>x.repeat==='daily'||!x.doneOn||x.doneOn===t);
+  if(S.lastRoll===t){save();return}
+  if(S.undo&&S.undo.day!==t)S.undo=null;
+  if(S.undoS&&S.undoS.day!==t)S.undoS=null;
+  if(S.fallen&&S.fallen.day!==t){
+    S.timeline=Math.floor(S.fallen.streak/7)*7;S.lastFull=S.timeline?y:null;S.fallen=null;
+    toast(S.timeline?'Back to your '+S.timeline+'-day checkpoint':'A new timeline begins');
+  }else if(S.started&&dailies().length&&S.lastFull!==y&&S.lastFull!==t){
+    const missed=dailies().filter(x=>x.doneOn!==y).map(x=>x.name).slice(0,4);
+    S.loops=(S.loops||0)+1;towerFall();
+    S.loopLog.unshift({loop:S.loops,streak:S.timeline,day:t,missed});S.loopLog=S.loopLog.slice(0,30);
+    S.fallen={streak:S.timeline,day:t,seen:false,missed};S.timeline=0;
   }
-  if(S.lastDone&&S.streak>0){
-    const missed=gapDays(S.lastDone,today())-1;
-    if(missed>0){
-      if(S.shields>=missed){S.shields-=missed;S.lastDone=yesterday();toast(missed===1?'A shield saved your streak':missed+' shields saved your streak')}
-      else{S.loops=(S.loops||0)+1;towerFall();S.loopLog.unshift({loop:S.loops,streak:S.streak,day:today(),missed:dailies().filter(t=>t.doneOn!==yesterday()).map(t=>t.name).slice(0,4)});S.loopLog=S.loopLog.slice(0,30);S.fallen={streak:S.streak,day:today(),seen:false,missed:dailies().filter(t=>t.doneOn!==yesterday()).map(t=>t.name).slice(0,4)};S.streak=0}
+  if(S.lastActive&&S.streak>0){
+    const gap=gapDays(S.lastActive,t)-1;
+    if(gap>0){
+      if(S.shields>=gap){S.shields-=gap;toast(gap===1?'A shield saved your streak':gap+' shields saved your streak')}
+      else{const R=rankInfo(S.streak);S.streak=R.i>0?RANKS[R.i-1].at:0;toast(S.streak?'Your streak cooled to '+S.streak+' days':'Your streak went out')}
+      S.lastActive=S.streak?y:null;
     }
   }
-  save();
+  S.lastRoll=t;save();
 }
 function settleDay(){
   const t=today();let finished=false;
-  if(allDone()&&S.lastDone!==t){
-    S.undo={day:t,streak:S.streak,shields:S.shields,lastDone:S.lastDone,best:S.best,fallen:S.fallen||null};
+  const active=S.tasks.some(x=>x.doneOn===t);
+  if(active){S.started=true;if(S.lastActive!==t){
+    S.undoS={day:t,streak:S.streak,shields:S.shields,lastActive:S.lastActive,best:S.best};
+    const was=rankInfo(S.streak).i;S.streak++;S.best=Math.max(S.best||0,S.streak);S.lastActive=t;
+    if(S.streak%7===0&&S.shields<MAX_SHIELDS)S.shields++;
+    const R=rankInfo(S.streak);if(R.i>was)setTimeout(()=>toast(R.rank.name+' rank! +'+R.rank.bonus+'% XP'),900);
+  }}else if(S.lastActive===t&&S.undoS&&S.undoS.day===t){
+    Object.assign(S,{streak:S.undoS.streak,shields:S.undoS.shields,lastActive:S.undoS.lastActive,best:S.undoS.best});S.undoS=null;
+  }
+  if(allDone()&&S.lastFull!==t){
+    S.undo={day:t,timeline:S.timeline,lastFull:S.lastFull,bestT:S.bestTimeline,fallen:S.fallen||null};
     const back=S.fallen&&S.fallen.day===t;finished=true;
     if([1,5].includes(S.tower.floor)&&S.tower.dayOn!==t){S.tower.dayOn=t;addClimb(1)}
-    S.streak=back?S.fallen.streak+1:S.streak+1;S.fallen=null;S.best=Math.max(S.best||0,S.streak);S.lastDone=t;
-    if(S.streak%7===0&&S.shields<MAX_SHIELDS){S.shields++;toast('7-day streak! You earned a shield')}
-    else toast(back?'Timeline restored: '+S.streak+'-day streak!':'All dailies done. Your chest is ready!');
-  }else if(!allDone()&&S.lastDone===t&&S.undo&&S.undo.day===t){
-    Object.assign(S,{streak:S.undo.streak,shields:S.undo.shields,lastDone:S.undo.lastDone,best:S.undo.best,fallen:S.undo.fallen});S.undo=null;
+    S.timeline=back?S.fallen.streak+1:S.timeline+1;S.fallen=null;S.bestTimeline=Math.max(S.bestTimeline||0,S.timeline);S.lastFull=t;
+    toast(back?'Timeline restored: '+S.timeline+' days!':'All dailies done. Your chest is ready!');
+  }else if(!allDone()&&S.lastFull===t&&S.undo&&S.undo.day===t){
+    Object.assign(S,{timeline:S.undo.timeline,lastFull:S.undo.lastFull,bestTimeline:S.undo.bestT,fallen:S.undo.fallen});S.undo=null;
     if(S.tower.dayOn===t){S.tower.dayOn=null;S.tower.p=Math.max(0,S.tower.p-1)}
   }
   return finished;
@@ -209,8 +229,8 @@ function toggle(id){
   const t=S.tasks.find(x=>x.id===id);if(!t)return;
   const d=DIFF[t.diff]||DIFF.easy,before=levelInfo(S.xp).level;
   let adding=t.doneOn!==today();
-  if(!adding){t.doneOn=null;S.xp=Math.max(0,S.xp-d.xp);S.coins=Math.max(0,S.coins-d.coins);if(S.tower.floor===3||S.tower.floor===4){const lost=climbGain(t);if(lost&&S.tower.p){S.tower.p=Math.max(0,S.tower.p-lost);toast('The scorpion saw that. -'+lost+' '+FLOORS[S.tower.floor].unit)}}}
-  else{t.doneOn=today();S.xp+=d.xp;S.coins+=d.coins;toast('+'+d.xp+' XP, +'+d.coins+' coins');if(t.climbed!==today()){t.climbed=today();addClimb(climbGain(t))}}
+  if(!adding){t.doneOn=null;S.xp=Math.max(0,S.xp-(t.gotXp||d.xp));S.coins=Math.max(0,S.coins-d.coins);if(S.tower.floor===3||S.tower.floor===4){const lost=climbGain(t);if(lost&&S.tower.p){S.tower.p=Math.max(0,S.tower.p-lost);toast('The scorpion saw that. -'+lost+' '+FLOORS[S.tower.floor].unit)}}}
+  else{const gain=Math.round(d.xp*(1+rankInfo(S.streak).rank.bonus/100));t.gotXp=gain;t.doneOn=today();S.xp+=gain;S.coins+=d.coins;toast('+'+gain+' XP, +'+d.coins+' coins');if(t.climbed!==today()){t.climbed=today();addClimb(climbGain(t))}}
   const finished=settleDay();
   if(finished)celebrate();else if(adding&&!playSound('rbd'))blip(520);
   const after=levelInfo(S.xp).level;
@@ -251,8 +271,9 @@ function taskRow(t){
   <button class="x" data-del-task="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">×</button></div>`}
 function viewToday(){
   const ds=dailies(),once=S.tasks.filter(t=>t.repeat!=='daily'),n=ds.filter(t=>t.doneOn===today()).length,opened=S.chestOn===today(),ready=allDone()&&!opened;
-  const trial=S.fallen?`<div class="trial"><b>Second chance: loop ${S.loops||1}</b><span>Finish every daily today to restore your ${S.fallen.streak}-day streak.</span></div>`:'';
-  return `${trial}<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
+  const trial=S.fallen?`<div class="trial"><b>Second chance: loop ${S.loops||1}</b><span>Finish every daily today to restore your ${S.fallen.streak}-day timeline.</span></div>`:'';
+  const R=rankInfo(S.streak),rankCard=`<div class="chest locked"><div><b>${R.rank.name} streak${R.rank.bonus?': +'+R.rank.bonus+'% XP':''}</b><span>${R.next?(R.next.at-S.streak)+' more active '+(R.next.at-S.streak===1?'day':'days')+' to '+R.next.name+' (+'+R.next.bonus+'% XP)':'Highest rank reached'}. One quest a day keeps it lit.</span></div></div>`;
+  return `${trial}${rankCard}<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
   <h2>Daily quests</h2>${ds.map(taskRow).join('')||'<p>Add a daily quest to start your streak.</p>'}
   ${once.length?'<h2>One-time quests</h2>'+once.map(taskRow).join(''):''}
   <h2>Add a quest</h2><form id="addTask"><input id="taskName" maxlength="80" required placeholder="Take out the trash" aria-label="Quest name">
@@ -286,12 +307,12 @@ function viewMore(){
   <h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
   <button class="btn main" id="copy">Copy backup code</button><textarea id="out" readonly aria-label="Backup code">${esc(JSON.stringify(S))}</textarea>
   <h2>Restore a backup</h2><p>This replaces everything currently in the app.</p><textarea id="in" placeholder="Paste a backup code" aria-label="Paste a backup code"></textarea><button class="btn" id="restore">Restore backup</button>
-  <h2>Stats</h2><p>Best streak: ${S.best||0} days · Total XP: ${S.xp} · Loops: ${S.loops||0}</p><button class="btn" id="preview">Preview the rewind</button>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
+  <h2>Stats</h2><p>Best streak: ${S.best||0} days · Best timeline: ${S.bestTimeline||0} days · Total XP: ${S.xp} · Loops: ${S.loops||0}</p><button class="btn" id="preview">Preview the rewind</button>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
 function render(){
   const L=levelInfo(S.xp),pct=Math.round(L.into/L.need*100);
   level.textContent=L.level;title.textContent=TITLES[Math.min(Math.floor((L.level-1)/3),TITLES.length-1)];
   xpText.textContent=L.into+' / '+L.need+' XP to level '+(L.level+1);bar.style.width=pct+'%';barWrap.setAttribute('aria-valuenow',pct);
-  streak.textContent=S.streak;shields.textContent=S.shields+'/'+MAX_SHIELDS;coins.textContent=S.coins;
+  streak.textContent=S.streak;timelineN.textContent=S.timeline;shields.textContent=S.shields+'/'+MAX_SHIELDS;coins.textContent=S.coins;
   const top=view.scrollTop;view.innerHTML=tab==='today'?viewToday():tab==='tower'?viewTower():tab==='rewards'?viewRewards():viewMore();view.scrollTop=top;
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
 }
@@ -306,7 +327,7 @@ view.addEventListener('click',async e=>{
   else if(D.remove)removeMedia(D.remove);
   else if(b.id==='rest'&&S.tower.green!==today()){S.tower.green=today();S.xp+=10;S.coins+=5;toast('+10 XP, +5 coins');commit()}
   else if(b.id==='chest')openChest();
-  else if(b.id==='preview')showRewind({streak:Math.max(S.streak,12),missed:dailies().slice(0,3).map(t=>t.name)},true);
+  else if(b.id==='preview')showRewind({streak:Math.max(S.timeline,12),missed:dailies().slice(0,3).map(t=>t.name)},true);
   else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
   else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
 });
@@ -322,7 +343,7 @@ view.addEventListener('submit',e=>{
 function showRewind(f,demo){
   const el=document.getElementById('rewind'),n=document.getElementById('rwNum');
   rwHead.textContent='Your timeline ended';
-  rwText.textContent=demo?'This is a preview. Your progress has not changed.':'You came back with your memory. Finish every daily today to restore your '+f.streak+'-day streak. Fail, and you return to your last 7-day checkpoint.';
+  rwText.textContent=demo?'This is a preview. Your progress has not changed.':'You came back with your memory. You missed a daily quest. Finish every daily today to restore your '+f.streak+'-day timeline. Fail, and you return to your last 7-day checkpoint.';
   rwList.innerHTML=(f.missed||[]).map(m=>'<li>'+esc(m)+'</li>').join('');
   const calls=['call1','call2'].filter(k=>buffers[k]);
   const head=rwHead.textContent;
