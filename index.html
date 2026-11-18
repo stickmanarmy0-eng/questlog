@@ -77,6 +77,14 @@ p{margin:0;color:var(--muted);font-size:14px}
 #rewind p{color:#c9c0dc;font-size:15px;max-width:32ch}
 #rewind ul{list-style:none;margin:0;padding:0;color:#e5dcff;font-weight:700}
 #rwLate{display:flex;flex-direction:column;align-items:center;gap:12px;animation:rwLate .6s ease 3.3s both}
+#rewind.wait *{animation-play-state:paused!important}#rewind.wait #rwLate{visibility:hidden}
+#win{position:fixed;inset:0;z-index:8;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(var(--top) + 16px) 18px calc(env(safe-area-inset-bottom) + 16px);background:rgba(5,5,9,.9)}
+#win.on{display:flex}
+#win img{display:block;max-width:100%;max-height:68vh;border-radius:20px;border:2px solid var(--xp);animation:pop .4s cubic-bezier(.2,1.5,.4,1) both}
+#win b{font-size:22px}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+.slot{flex-wrap:wrap}.slot .btn{display:inline-grid;place-content:center;font-size:14px;min-height:40px;padding:0 12px}
+.slot input{display:none}
 #rwGo{background:#b98cff;color:#160b28;min-width:190px}
 .trial{padding:13px;border-radius:14px;border:1px solid #9a5cff;background:#21172f}
 .trial b{display:block}.trial span{font-size:13px;color:#c9c0dc}
@@ -104,10 +112,11 @@ p{margin:0;color:var(--muted);font-size:14px}
   <nav role="tablist">
     <button data-tab="today" role="tab">Today</button>
     <button data-tab="rewards" role="tab">Rewards</button>
-    <button data-tab="more" role="tab">Backup</button>
+    <button data-tab="more" role="tab">Settings</button>
   </nav>
 </div>
 <div id="toast" role="status"></div>
+<div id="win" role="dialog" aria-modal="true" aria-label="All quests complete"><img id="winImg" alt="Your victory picture"><b>All quests complete!</b><button class="btn main" id="winGo">Close</button></div>
 <div id="rewind" role="dialog" aria-modal="true" aria-labelledby="rwHead">
   <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="#0b0812" stroke="#b98cff" stroke-width="3"/><circle cx="60" cy="60" r="44" fill="none" stroke="#b98cff" stroke-width="5" stroke-dasharray="2 21.04"/><path d="M60 8 66 34 52 50 64 66 56 112" fill="none" stroke="#efe7ff" stroke-width="1.6"/><line class="hand" x1="60" y1="60" x2="60" y2="30" stroke="#efe7ff" stroke-width="5" stroke-linecap="round"/><line class="hand b" x1="60" y1="60" x2="60" y2="18" stroke="#b98cff" stroke-width="3" stroke-linecap="round"/></svg>
   <div id="rwNum"></div>
@@ -159,23 +168,26 @@ function rollover(){
   save();
 }
 function settleDay(){
-  const t=today();
+  const t=today();let finished=false;
   if(allDone()&&S.lastDone!==t){
     S.undo={day:t,streak:S.streak,shields:S.shields,lastDone:S.lastDone,best:S.best,fallen:S.fallen||null};
-    const back=S.fallen&&S.fallen.day===t;
+    const back=S.fallen&&S.fallen.day===t;finished=true;
     S.streak=back?S.fallen.streak+1:S.streak+1;S.fallen=null;S.best=Math.max(S.best||0,S.streak);S.lastDone=t;
     if(S.streak%7===0&&S.shields<MAX_SHIELDS){S.shields++;toast('7-day streak! You earned a shield')}
     else toast(back?'Timeline restored: '+S.streak+'-day streak!':'All dailies done. Your chest is ready!');
   }else if(!allDone()&&S.lastDone===t&&S.undo&&S.undo.day===t){
     Object.assign(S,{streak:S.undo.streak,shields:S.undo.shields,lastDone:S.undo.lastDone,best:S.undo.best,fallen:S.undo.fallen});S.undo=null;
   }
+  return finished;
 }
 function toggle(id){
   const t=S.tasks.find(x=>x.id===id);if(!t)return;
   const d=DIFF[t.diff]||DIFF.easy,before=levelInfo(S.xp).level;
-  if(t.doneOn===today()){t.doneOn=null;S.xp=Math.max(0,S.xp-d.xp);S.coins=Math.max(0,S.coins-d.coins)}
-  else{t.doneOn=today();S.xp+=d.xp;S.coins+=d.coins;blip(520);toast('+'+d.xp+' XP, +'+d.coins+' coins')}
-  settleDay();
+  let adding=t.doneOn!==today();
+  if(!adding){t.doneOn=null;S.xp=Math.max(0,S.xp-d.xp);S.coins=Math.max(0,S.coins-d.coins)}
+  else{t.doneOn=today();S.xp+=d.xp;S.coins+=d.coins;toast('+'+d.xp+' XP, +'+d.coins+' coins')}
+  const finished=settleDay();
+  if(finished)celebrate();else if(adding&&!playSound('rbd'))blip(520);
   const after=levelInfo(S.xp).level;
   if(after>before){blip(780);toast('Level up! You reached level '+after)}
   commit();
@@ -191,7 +203,19 @@ function openChest(){
 }
 function commit(){save();render()}
 let audio;
-function blip(f){try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.setValueAtTime(.05,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.16);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.16)}catch(e){}}
+const SLOTS=[['rbd','Quest complete sound','audio'],['scorpion','All quests complete sound','audio'],['call1','Rewind sound 1','audio'],['call2','Rewind sound 2','audio'],['popup','All quests complete picture','image']];
+const media={},buffers={};let current,winUrl,dbP;
+function ctx(){audio=audio||new(window.AudioContext||window.webkitAudioContext)();return audio}
+function blip(f){try{const c=ctx();c.resume();const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(.05,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.16);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.16)}catch(e){}}
+function playSound(key){const b=buffers[key];if(!b)return false;try{const c=ctx();c.resume();if(current)try{current.stop()}catch(e){}current=c.createBufferSource();current.buffer=b;current.connect(c.destination);current.start();return true}catch(e){return false}}
+function db(){return dbP=dbP||new Promise((ok,no)=>{const r=indexedDB.open('questlog-media',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function store(mode,fn){const d=await db();return new Promise((ok,no)=>{const t=d.transaction('files',mode),r=fn(t.objectStore('files'));t.oncomplete=()=>ok(r.result);t.onerror=t.onabort=()=>no(t.error)})}
+async function prepare(key,blob){media[key]=blob;delete buffers[key];if(key!=='popup'){const data=await blob.arrayBuffer();buffers[key]=await new Promise((ok,no)=>ctx().decodeAudioData(data,ok,no))}}
+async function loadMedia(){try{const keys=await store('readonly',o=>o.getAllKeys());for(const k of keys){const b=await store('readonly',o=>o.get(k));try{await prepare(k,b)}catch(e){}}if(tab==='more')render()}catch(e){}}
+async function addMedia(key,file){try{await prepare(key,file);await store('readwrite',o=>o.put(file,key));try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}toast('Added');render()}catch(e){delete media[key];delete buffers[key];toast('That file would not load. Try an MP3 or GIF.');render()}}
+async function removeMedia(key){delete media[key];delete buffers[key];try{await store('readwrite',o=>o.delete(key))}catch(e){}render()}
+function showWin(){if(!media.popup)return;if(winUrl)URL.revokeObjectURL(winUrl);winUrl=URL.createObjectURL(media.popup);winImg.src=winUrl;win.classList.add('on')}
+function celebrate(){if(!playSound('scorpion'))blip(780);showWin()}
 let toastTimer;
 function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('on'),2200)}
 
@@ -213,7 +237,9 @@ function viewRewards(){
   return `<p>Spend coins on real-life treats you choose.</p>${S.rewards.map(r=>`<div class="row"><div class="info"><span class="name">${esc(r.name)}</span><span class="meta">${r.cost} coins</span></div><button class="btn ${S.coins>=r.cost?'main':''}" data-buy="${esc(r.id)}" ${S.coins>=r.cost?'':'disabled'}>Redeem</button><button class="x" data-del-reward="${esc(r.id)}" aria-label="Delete ${esc(r.name)}">×</button></div>`).join('')}
   <h2>Add a reward</h2><form id="addReward"><input id="rewardName" maxlength="80" required placeholder="Coffee out" aria-label="Reward name"><input id="rewardCost" type="number" inputmode="numeric" min="1" max="100000" required placeholder="Cost in coins" aria-label="Cost in coins"><button class="btn main">Add reward</button></form>`}
 function viewMore(){
-  return `<h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
+  return `<h2>Your sounds and picture</h2><p>These stay private on this device and are not included in backup codes. Add them from the installed app.</p>
+  ${SLOTS.map(([k,n,type])=>`<div class="row slot"><div class="info"><span class="name">${n}</span><span class="meta">${media[k]?'Added':'Not added'}</span></div>${media[k]?`<button class="btn" data-test="${k}">Test</button><button class="btn" data-remove="${k}">Remove</button>`:`<label class="btn main">Choose<input type="file" data-slot="${k}" accept="${type==='audio'?'audio/*,.mp3,.m4a':'image/*,.gif'}"></label>`}</div>`).join('')}
+  <h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
   <button class="btn main" id="copy">Copy backup code</button><textarea id="out" readonly aria-label="Backup code">${esc(JSON.stringify(S))}</textarea>
   <h2>Restore a backup</h2><p>This replaces everything currently in the app.</p><textarea id="in" placeholder="Paste a backup code" aria-label="Paste a backup code"></textarea><button class="btn" id="restore">Restore backup</button>
   <h2>Stats</h2><p>Best streak: ${S.best||0} days · Total XP: ${S.xp} · Loops: ${S.loops||0}</p><button class="btn" id="preview">Preview the rewind</button>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
@@ -232,11 +258,16 @@ view.addEventListener('click',async e=>{
   else if(D.delTask){S.tasks=S.tasks.filter(t=>t.id!==D.delTask);settleDay();commit()}
   else if(D.delReward){S.rewards=S.rewards.filter(r=>r.id!==D.delReward);commit()}
   else if(D.buy){const r=S.rewards.find(x=>x.id===D.buy);if(r&&S.coins>=r.cost){S.coins-=r.cost;blip(700);toast('Enjoy: '+r.name);commit()}}
+  else if(D.test){if(D.test==='popup')showWin();else playSound(D.test)}
+  else if(D.remove)removeMedia(D.remove);
   else if(b.id==='chest')openChest();
   else if(b.id==='preview')showRewind({streak:Math.max(S.streak,12),missed:dailies().slice(0,3).map(t=>t.name)},true);
   else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
   else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
 });
+view.addEventListener('change',e=>{const k=e.target.dataset.slot,f=e.target.files&&e.target.files[0];if(k&&f)addMedia(k,f)});
+winGo.onclick=()=>win.classList.remove('on');
+document.addEventListener('pointerdown',()=>{try{if(audio)audio.resume()}catch(e){}},{passive:true});
 view.addEventListener('submit',e=>{
   e.preventDefault();
   if(e.target.id==='addTask'){const name=taskName.value.trim();if(name){S.tasks.push({id:uid(),name,diff:taskDiff.value,repeat:taskRepeat.value,doneOn:null});settleDay();commit()}}
@@ -247,18 +278,24 @@ function showRewind(f,demo){
   rwHead.textContent='Your timeline ended';
   rwText.textContent=demo?'This is a preview. Your progress has not changed.':'You came back with your memory. Finish every daily today to restore your '+f.streak+'-day streak. Fail, and you return to your last 7-day checkpoint.';
   rwList.innerHTML=(f.missed||[]).map(m=>'<li>'+esc(m)+'</li>').join('');
-  el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
-  [440,330,247,165].forEach((h,i)=>setTimeout(()=>blip(h),i*420));
-  let v=f.streak;n.textContent=v;clearInterval(showRewind.t);
-  const step=Math.max(1,Math.ceil(f.streak/24));
-  showRewind.t=setInterval(()=>{v=Math.max(0,v-step);n.textContent=v;if(!v)clearInterval(showRewind.t)},2800/Math.ceil(f.streak/step));
+  const calls=['call1','call2'].filter(k=>buffers[k]);
+  const head=rwHead.textContent;
+  const begin=()=>{
+    el.classList.remove('wait');rwHead.textContent=head;
+    if(calls.length)playSound(calls[Math.floor(Math.random()*calls.length)]);
+    else [440,330,247,165].forEach((h,i)=>setTimeout(()=>blip(h),i*420));
+    let v=f.streak;n.textContent=v;clearInterval(showRewind.t);
+    const step=Math.max(1,Math.ceil(f.streak/24));
+    showRewind.t=setInterval(()=>{v=Math.max(0,v-step);n.textContent=v;if(!v)clearInterval(showRewind.t)},2800/Math.ceil(f.streak/step));
+  };
+  el.classList.remove('on','wait');void el.offsetWidth;el.classList.add('on');n.textContent=f.streak;
+  if(demo)begin();else{el.classList.add('wait');rwHead.textContent='Tap to return';el.addEventListener('pointerdown',begin,{once:true})}
   rwGo.onclick=()=>{el.classList.remove('on');if(!demo&&S.fallen){S.fallen.seen=true;commit()}};
-  rwGo.focus({preventScroll:true});
-}
+  }
 function maybeRewind(){if(S.fallen&&!S.fallen.seen)showRewind(S.fallen)}
 let seen=today();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&seen!==today()){seen=today();rollover();render();maybeRewind()}});
-rollover();render();maybeRewind();
+rollover();render();loadMedia().then(maybeRewind);
 if('serviceWorker'in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 </script>
 </body>
