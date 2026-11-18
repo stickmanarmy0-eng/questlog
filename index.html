@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questlog</title>
+<meta name="theme-color" content="#11131c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Questlog">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* Layout idea: a pinned character card on top, one thumb-reach column of quests below, tabs at the bottom. */
+:root{
+  color-scheme:dark;
+  --bg:#11131c; --panel:#1b1e2b; --line:#2d3144; --text:#f1f0ea; --muted:#a3a6b8;
+  --xp:#ffb53d; --xp2:#ff7a45; --good:#58d6a4; --blue:#7fa8ff;
+  --font:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.4 var(--font);overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+#app{height:100%;max-width:560px;margin:auto;display:flex;flex-direction:column}
+header{padding:calc(env(safe-area-inset-top) + 14px) 16px 14px;background:var(--panel);border-bottom:1px solid var(--line);border-radius:0 0 22px 22px}
+.top{display:flex;align-items:center;gap:12px}
+.lvl{width:54px;height:54px;flex:none;border-radius:16px;background:linear-gradient(145deg,var(--xp),var(--xp2));color:#22130a;display:grid;place-content:center;text-align:center;font-weight:800;font-size:23px;line-height:1}
+.lvl small{display:block;font-size:9px;letter-spacing:.08em;margin-bottom:2px}
+.who{flex:1;min-width:0}
+.who b{display:block;font-size:19px}
+.who span{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.bar{height:13px;margin-top:12px;border-radius:9px;background:#0c0e15;overflow:hidden}
+.bar i{display:block;height:100%;min-width:6px;border-radius:9px;background:linear-gradient(90deg,var(--xp2),var(--xp));transition:width .45s cubic-bezier(.2,.9,.3,1.2)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat{background:#141722;border-radius:12px;padding:7px 10px}
+.stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
+h2{font-size:14px;margin:6px 0 0;color:var(--muted);font-weight:600}
+.row{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-height:58px}
+.row.done{opacity:.62}.row.done .name{text-decoration:line-through}
+.check{width:32px;height:32px;flex:none;border-radius:50%;border:2px solid var(--muted);display:grid;place-content:center;color:#10231b;font-weight:900}
+.done .check{background:var(--good);border-color:var(--good)}
+.info{flex:1;min-width:0;text-align:left;overflow-wrap:anywhere}
+.name{display:block}
+.meta{font-size:12.5px;color:var(--muted)}
+.x{width:36px;height:36px;flex:none;color:var(--muted);font-size:20px}
+.btn{min-height:46px;padding:0 16px;border-radius:13px;background:#2a2e41;font-weight:700}
+.btn.main{background:var(--xp);color:#22130a}
+.btn:disabled{opacity:.45;cursor:default}
+.chest{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;border:1px solid var(--xp);background:#2a2115}
+.chest.locked{border-color:var(--line);background:var(--panel)}
+.chest div{flex:1}.chest b{display:block}.chest span{font-size:13px;color:var(--muted)}
+nav{display:grid;grid-template-columns:repeat(3,1fr);padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);border-top:1px solid var(--line);background:var(--panel)}
+nav button{height:44px;border-radius:11px;color:var(--muted);font-weight:700}
+nav button[aria-selected=true]{color:var(--text);background:#2a2e41}
+form{display:flex;flex-direction:column;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+input,select,textarea{width:100%;min-height:46px;font-size:16px;background:#11131c;border:1px solid var(--line);border-radius:11px;padding:10px}
+textarea{min-height:110px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+p{margin:0;color:var(--muted);font-size:14px}
+#toast{position:fixed;z-index:5;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translate(-50%,-140%);width:max-content;max-width:88vw;background:var(--text);color:#11131c;font-weight:700;padding:10px 15px;border-radius:13px;transition:transform .25s}
+#toast.on{transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="top">
+      <div class="lvl"><div><small>LEVEL</small><span id="level"></span></div></div>
+      <div class="who"><b id="title"></b><span id="xpText"></span></div>
+    </div>
+    <div class="bar" role="progressbar" aria-label="XP to next level" aria-valuemin="0" aria-valuemax="100" id="barWrap"><i id="bar"></i></div>
+    <div class="stats">
+      <div class="stat"><b id="streak"></b><span>day streak</span></div>
+      <div class="stat"><b id="shields"></b><span>shields</span></div>
+      <div class="stat"><b id="coins"></b><span>coins</span></div>
+    </div>
+  </header>
+  <main id="view"></main>
+  <nav role="tablist">
+    <button data-tab="today" role="tab">Today</button>
+    <button data-tab="rewards" role="tab">Rewards</button>
+    <button data-tab="more" role="tab">Backup</button>
+  </nav>
+</div>
+<div id="toast" role="status"></div>
+<script>
+const KEY='questlog.v1';
+const DIFF={easy:{label:'Easy',xp:10,coins:5},medium:{label:'Medium',xp:25,coins:10},hard:{label:'Hard',xp:50,coins:20}};
+const TITLES=['Rookie','Tidy Apprentice','Task Runner','Chore Slayer','Routine Knight','Habit Hero','Household Legend'];
+const MAX_SHIELDS=3;
+let tab='today',memory=null,storageOK=true;
+
+const pad=n=>String(n).padStart(2,'0');
+const dayStr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>dayStr(new Date());
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const gapDays=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dayStr(d)};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function fresh(){return{xp:0,coins:0,streak:0,best:0,shields:0,lastDone:null,chestOn:null,undo:null,
+  tasks:[['Make the bed','easy'],['Wash the dishes','medium'],['Move for 20 minutes','hard']].map(([name,diff])=>({id:uid(),name,diff,repeat:'daily',doneOn:null})),
+  rewards:[{id:uid(),name:'30 minutes of gaming',cost:100},{id:uid(),name:'Favorite snack',cost:150},{id:uid(),name:'Movie night',cost:400}]}}
+function valid(s){return s&&typeof s==='object'&&Number.isFinite(s.xp)&&Number.isFinite(s.coins)&&Array.isArray(s.tasks)&&Array.isArray(s.rewards)}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(valid(s))return s}catch(e){}return fresh()}
+function save(){memory=JSON.stringify(S);try{localStorage.setItem(KEY,memory);storageOK=true}catch(e){storageOK=false}}
+let S=load();
+
+function levelInfo(xp){let level=1,left=xp,need=100;while(left>=need){left-=need;level++;need=100+(level-1)*25}return{level,into:left,need}}
+function dailies(){return S.tasks.filter(t=>t.repeat==='daily')}
+function allDone(){const d=dailies();return d.length>0&&d.every(t=>t.doneOn===today())}
+
+function rollover(){
+  S.tasks=S.tasks.filter(t=>t.repeat==='daily'||!t.doneOn||t.doneOn===today());
+  if(S.undo&&S.undo.day!==today())S.undo=null;
+  if(S.lastDone&&S.streak>0){
+    const missed=gapDays(S.lastDone,today())-1;
+    if(missed>0){
+      if(S.shields>=missed){S.shields-=missed;S.lastDone=yesterday();toast(missed===1?'A shield saved your streak':missed+' shields saved your streak')}
+      else{S.streak=0;toast('New streak starts today. You get this.')}
+    }
+  }
+  save();
+}
+function settleDay(){
+  const t=today();
+  if(allDone()&&S.lastDone!==t){
+    S.undo={day:t,streak:S.streak,shields:S.shields,lastDone:S.lastDone,best:S.best};
+    S.streak++;S.best=Math.max(S.best||0,S.streak);S.lastDone=t;
+    if(S.streak%7===0&&S.shields<MAX_SHIELDS){S.shields++;toast('7-day streak! You earned a shield')}
+    else toast('All dailies done. Your chest is ready!');
+  }else if(!allDone()&&S.lastDone===t&&S.undo&&S.undo.day===t){
+    Object.assign(S,{streak:S.undo.streak,shields:S.undo.shields,lastDone:S.undo.lastDone,best:S.undo.best});S.undo=null;
+  }
+}
+function toggle(id){
+  const t=S.tasks.find(x=>x.id===id);if(!t)return;
+  const d=DIFF[t.diff]||DIFF.easy,before=levelInfo(S.xp).level;
+  if(t.doneOn===today()){t.doneOn=null;S.xp=Math.max(0,S.xp-d.xp);S.coins=Math.max(0,S.coins-d.coins)}
+  else{t.doneOn=today();S.xp+=d.xp;S.coins+=d.coins;blip(520);toast('+'+d.xp+' XP, +'+d.coins+' coins')}
+  settleDay();
+  const after=levelInfo(S.xp).level;
+  if(after>before){blip(780);toast('Level up! You reached level '+after)}
+  commit();
+}
+function openChest(){
+  if(!allDone()||S.chestOn===today())return;
+  S.chestOn=today();
+  const r=Math.random();let msg;
+  if(r<.1&&S.shields<MAX_SHIELDS){S.shields++;msg='Rare find: a streak shield!'}
+  else if(r<.4){const n=25+Math.floor(Math.random()*26);S.xp+=n;msg='Chest: +'+n+' XP'}
+  else{const n=20+Math.floor(Math.random()*31);S.coins+=n;msg='Chest: +'+n+' coins'}
+  blip(660);toast(msg);commit();
+}
+function commit(){save();render()}
+let audio;
+function blip(f){try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;g.gain.setValueAtTime(.05,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.16);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+.16)}catch(e){}}
+let toastTimer;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('on'),2200)}
+
+function taskRow(t){
+  const d=DIFF[t.diff]||DIFF.easy,done=t.doneOn===today();
+  return `<div class="row ${done?'done':''}"><button class="check" data-toggle="${esc(t.id)}" aria-label="${done?'Undo':'Complete'} ${esc(t.name)}">${done?'✓':''}</button>
+  <button class="info" data-toggle="${esc(t.id)}"><span class="name">${esc(t.name)}</span><span class="meta">${d.label} · ${d.xp} XP · ${d.coins} coins</span></button>
+  <button class="x" data-del-task="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">×</button></div>`}
+function viewToday(){
+  const ds=dailies(),once=S.tasks.filter(t=>t.repeat!=='daily'),n=ds.filter(t=>t.doneOn===today()).length,opened=S.chestOn===today(),ready=allDone()&&!opened;
+  return `<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
+  <h2>Daily quests</h2>${ds.map(taskRow).join('')||'<p>Add a daily quest to start your streak.</p>'}
+  ${once.length?'<h2>One-time quests</h2>'+once.map(taskRow).join(''):''}
+  <h2>Add a quest</h2><form id="addTask"><input id="taskName" maxlength="80" required placeholder="Take out the trash" aria-label="Quest name">
+  <div class="two"><select id="taskDiff" aria-label="Difficulty"><option value="easy">Easy, 10 XP</option><option value="medium">Medium, 25 XP</option><option value="hard">Hard, 50 XP</option></select>
+  <select id="taskRepeat" aria-label="Repeat"><option value="daily">Every day</option><option value="once">One time</option></select></div><button class="btn main">Add quest</button></form>`}
+function viewRewards(){
+  return `<p>Spend coins on real-life treats you choose.</p>${S.rewards.map(r=>`<div class="row"><div class="info"><span class="name">${esc(r.name)}</span><span class="meta">${r.cost} coins</span></div><button class="btn ${S.coins>=r.cost?'main':''}" data-buy="${esc(r.id)}" ${S.coins>=r.cost?'':'disabled'}>Redeem</button><button class="x" data-del-reward="${esc(r.id)}" aria-label="Delete ${esc(r.name)}">×</button></div>`).join('')}
+  <h2>Add a reward</h2><form id="addReward"><input id="rewardName" maxlength="80" required placeholder="Coffee out" aria-label="Reward name"><input id="rewardCost" type="number" inputmode="numeric" min="1" max="100000" required placeholder="Cost in coins" aria-label="Cost in coins"><button class="btn main">Add reward</button></form>`}
+function viewMore(){
+  return `<h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
+  <button class="btn main" id="copy">Copy backup code</button><textarea id="out" readonly aria-label="Backup code">${esc(JSON.stringify(S))}</textarea>
+  <h2>Restore a backup</h2><p>This replaces everything currently in the app.</p><textarea id="in" placeholder="Paste a backup code" aria-label="Paste a backup code"></textarea><button class="btn" id="restore">Restore backup</button>
+  <h2>Stats</h2><p>Best streak: ${S.best||0} days · Total XP: ${S.xp}</p>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
+function render(){
+  const L=levelInfo(S.xp),pct=Math.round(L.into/L.need*100);
+  level.textContent=L.level;title.textContent=TITLES[Math.min(Math.floor((L.level-1)/3),TITLES.length-1)];
+  xpText.textContent=L.into+' / '+L.need+' XP to level '+(L.level+1);bar.style.width=pct+'%';barWrap.setAttribute('aria-valuenow',pct);
+  streak.textContent=S.streak;shields.textContent=S.shields+'/'+MAX_SHIELDS;coins.textContent=S.coins;
+  const top=view.scrollTop;view.innerHTML=tab==='today'?viewToday():tab==='rewards'?viewRewards():viewMore();view.scrollTop=top;
+  document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+}
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;view.scrollTop=0;render()}};
+view.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;const D=b.dataset;
+  if(D.toggle)toggle(D.toggle);
+  else if(D.delTask){S.tasks=S.tasks.filter(t=>t.id!==D.delTask);settleDay();commit()}
+  else if(D.delReward){S.rewards=S.rewards.filter(r=>r.id!==D.delReward);commit()}
+  else if(D.buy){const r=S.rewards.find(x=>x.id===D.buy);if(r&&S.coins>=r.cost){S.coins-=r.cost;blip(700);toast('Enjoy: '+r.name);commit()}}
+  else if(b.id==='chest')openChest();
+  else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
+  else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
+});
+view.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(e.target.id==='addTask'){const name=taskName.value.trim();if(name){S.tasks.push({id:uid(),name,diff:taskDiff.value,repeat:taskRepeat.value,doneOn:null});settleDay();commit()}}
+  if(e.target.id==='addReward'){const name=rewardName.value.trim(),cost=Math.floor(+rewardCost.value);if(name&&cost>0){S.rewards.push({id:uid(),name,cost});commit()}}
+});
+let seen=today();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&seen!==today()){seen=today();rollover();render()}});
+rollover();render();
+if('serviceWorker'in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+</script>
+</body>
+</html>
