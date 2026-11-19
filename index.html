@@ -18,6 +18,7 @@
   --bg:#11131c; --panel:#1b1e2b; --line:#2d3144; --text:#f1f0ea; --muted:#a3a6b8;
   --xp:#ffb53d; --xp2:#ff7a45; --good:#58d6a4; --blue:#7fa8ff;
   --top:env(safe-area-inset-top,0px);
+  --deep:#141722; --btn:#2a2e41;
   --font:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 @media (display-mode:standalone) and (orientation:portrait){:root{--top:max(env(safe-area-inset-top,0px),50px)}}
@@ -28,17 +29,17 @@ button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 #app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);height:100%;max-width:560px;margin:auto;display:flex;flex-direction:column}
-header{padding:calc(var(--top) + 14px) 16px 14px;background:var(--panel);border-bottom:1px solid var(--line);border-radius:0 0 22px 22px}
+header{padding:calc(var(--top) + 14px) 16px 14px;background:var(--panel);background:linear-gradient(180deg,color-mix(in srgb,var(--xp) 11%,var(--panel)),var(--panel));border-bottom:1px solid var(--line);border-radius:0 0 22px 22px}
 .top{display:flex;align-items:center;gap:12px}
-.lvl{width:54px;height:54px;flex:none;border-radius:16px;background:linear-gradient(145deg,var(--xp),var(--xp2));color:#22130a;display:grid;place-content:center;text-align:center;font-weight:800;font-size:23px;line-height:1}
+.lvl{width:54px;height:54px;flex:none;border-radius:16px;background:linear-gradient(145deg,var(--xp),var(--xp2));color:#22130a;display:grid;place-content:center;text-align:center;font-weight:800;font-size:23px;line-height:1;box-shadow:0 6px 22px -6px var(--xp)}
 .lvl small{display:block;font-size:9px;letter-spacing:.08em;margin-bottom:2px}
 .who{flex:1;min-width:0}
 .who b{display:block;font-size:19px}
 .who span{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
-.bar{height:13px;margin-top:12px;border-radius:9px;background:#0c0e15;overflow:hidden}
-.bar i{display:block;height:100%;min-width:6px;border-radius:9px;background:linear-gradient(90deg,var(--xp2),var(--xp));transition:width .45s cubic-bezier(.2,.9,.3,1.2)}
+.bar{height:13px;margin-top:12px;border-radius:9px;background:var(--deep);overflow:hidden}
+.bar i{position:relative;overflow:hidden;display:block;height:100%;min-width:6px;border-radius:9px;background:linear-gradient(90deg,var(--xp2),var(--xp));transition:width .45s cubic-bezier(.2,.9,.3,1.2)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
-.stat{background:#141722;border-radius:12px;padding:7px 8px;min-width:0}
+.stat{background:var(--deep);border-radius:12px;padding:7px 8px;min-width:0}
 .stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
@@ -51,17 +52,18 @@ h2{font-size:14px;margin:6px 0 0;color:var(--muted);font-weight:600}
 .name{display:block}
 .meta{font-size:12.5px;color:var(--muted)}
 .x{width:36px;height:36px;flex:none;color:var(--muted);font-size:20px}
-.btn{min-height:46px;padding:0 16px;border-radius:13px;background:#2a2e41;font-weight:700}
+.btn{min-height:46px;padding:0 16px;border-radius:13px;background:var(--btn);font-weight:700}
 .btn.main{background:var(--xp);color:#22130a}
 .btn:disabled{opacity:.45;cursor:default}
-.chest{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;border:1px solid var(--xp);background:#2a2115}
+.chest{display:flex;align-items:center;gap:12px;padding:13px;border-radius:14px;border:1px solid var(--xp);background:#2a2115;background:color-mix(in srgb,var(--xp) 12%,var(--bg))}
 .chest.locked{border-color:var(--line);background:var(--panel)}
 .chest div{flex:1}.chest b{display:block}.chest span{font-size:13px;color:var(--muted)}
 nav{display:grid;grid-template-columns:repeat(4,1fr);padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);border-top:1px solid var(--line);background:var(--panel)}
-nav button{height:44px;border-radius:11px;color:var(--muted);font-weight:700}
-nav button[aria-selected=true]{color:var(--text);background:#2a2e41}
+nav button{height:54px;border-radius:12px;color:var(--muted);font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav button[aria-selected=true]{color:var(--xp);background:var(--btn)}
 form{display:flex;flex-direction:column;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
-input,select,textarea{width:100%;min-height:46px;font-size:16px;background:#11131c;border:1px solid var(--line);border-radius:11px;padding:10px}
+input,select,textarea{width:100%;min-height:46px;font-size:16px;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:10px}
 textarea{min-height:110px;resize:vertical}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 p{margin:0;color:var(--muted);font-size:14px}
@@ -92,6 +94,33 @@ main>*{flex:none}
 .pulse{animation:pulse 1.8s ease-in-out infinite}
 @keyframes drift{from{transform:translateX(-14px)}to{transform:translateX(14px)}}
 @keyframes pulse{50%{opacity:.4}}
+.bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-100%);animation:sheen 3.4s ease-in-out infinite}
+@keyframes sheen{60%,100%{transform:translateX(100%)}}
+.swap>*{animation:rise .3s ease both}@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.row.just{animation:rowpop .5s}.just .check{animation:checkpop .4s cubic-bezier(.2,1.6,.4,1)}
+@keyframes rowpop{35%{transform:scale(1.03);border-color:var(--good)}}@keyframes checkpop{from{transform:scale(.3)}}
+.float{position:fixed;z-index:4;pointer-events:none;font-weight:800;font-size:22px;color:var(--xp);text-shadow:0 2px 10px #000;animation:floatUp 1.1s ease-out forwards}
+@keyframes floatUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-70px)}}
+#lvlup{position:fixed;inset:0;z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;background:rgba(5,5,9,.95);background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--xp) 32%,#000) 0,rgba(5,5,9,.96) 64%)}
+#lvlup.on{display:flex;animation:rwIn .5s ease both}#lvlup small{letter-spacing:.2em;color:var(--xp);font-weight:800}
+#lvlNum{font-size:110px;font-weight:900;line-height:1;background:linear-gradient(145deg,var(--xp),var(--xp2));-webkit-background-clip:text;background-clip:text;color:transparent;animation:pop .6s cubic-bezier(.2,1.5,.4,1) both}
+#lvlTitle{font-size:24px}#lvlup p{color:var(--muted);max-width:28ch}
+.conf{position:absolute;inset:0;overflow:hidden;pointer-events:none}.conf i{position:absolute;top:-20px;width:9px;height:15px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.strip{display:flex;gap:6px;padding:10px 12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.day{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;font-size:12px;color:var(--muted)}
+.day i{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:block}
+.day.f i{background:var(--xp);border-color:var(--xp)}.day.a i{border-color:var(--xp);background:radial-gradient(circle,var(--xp) 0 4px,transparent 5px)}
+.day.r i{border-color:#ff6b6b;background:radial-gradient(circle,#ff6b6b 0 3px,transparent 4px)}.day.z i{border-style:dashed}
+.day.now{color:var(--text);font-weight:700}.day.now i{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--blue)}
+.chips{display:flex;gap:6px}.chip{flex:1;position:relative}
+.chip input{position:absolute;opacity:0;width:0;min-height:0;padding:0;border:0;pointer-events:none}
+.chip span{display:grid;place-content:center;height:42px;border-radius:11px;background:var(--deep);border:1px solid var(--line);font-weight:700;color:var(--muted)}
+.chip input:checked+span{background:var(--xp);border-color:var(--xp);color:#22130a}.chip input:focus-visible+span{outline:2px solid var(--blue)}
+.sw{width:30px;height:30px;flex:none;border-radius:50%}
+.row.later{opacity:.7}
+.flame{width:16px;height:16px;vertical-align:-2px;margin-right:3px}
+@media (prefers-reduced-motion:reduce){.bar i::after{animation:none}.conf{display:none}.swap>*,.row.just,.just .check{animation:none}}
 @media (prefers-reduced-motion:reduce){.drift,.pulse{animation:none!important}}
 .sky{display:block;width:100%;height:auto;border-radius:18px;border:1px solid var(--line)}
 .card{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
@@ -123,13 +152,14 @@ main>*{flex:none}
   </header>
   <main id="view"></main>
   <nav role="tablist">
-    <button data-tab="today" role="tab">Today</button>
-    <button data-tab="tower" role="tab">Tower</button>
-    <button data-tab="rewards" role="tab">Rewards</button>
-    <button data-tab="more" role="tab">Settings</button>
+    <button data-tab="today" role="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9"/></svg><span>Today</span></button>
+    <button data-tab="tower" role="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21V9l3-5 3 5v12M5 21v-8l2-2M19 21v-8l-2-2M4 21h16"/></svg><span>Tower</span></button>
+    <button data-tab="rewards" role="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.7 2.5-1.7s2.5.7 2.5 1.7-1 1.6-2.5 1.9-2.5.8-2.5 1.8 1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/></svg><span>Rewards</span></button>
+    <button data-tab="more" role="tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Settings</span></button>
   </nav>
 </div>
 <div id="toast" role="status"></div>
+<div id="lvlup" role="dialog" aria-modal="true" aria-labelledby="lvlTitle"><div class="conf" id="confetti" aria-hidden="true"></div><small>LEVEL UP</small><div id="lvlNum"></div><b id="lvlTitle"></b><p id="lvlSub"></p><button class="btn main" id="lvlGo">Keep going</button></div>
 <div id="clear" role="dialog" aria-modal="true" aria-labelledby="clearName"><small>FLOOR CLEARED</small><b id="clearName"></b><p id="clearText"></p><button class="btn main" id="clearGo">Keep climbing</button></div>
 <div id="win" role="dialog" aria-modal="true" aria-label="All quests complete"><img id="winImg" alt="Your victory picture"><b>All quests complete!</b><button class="btn main" id="winGo">Close</button></div>
 <div id="rewind" role="dialog" aria-modal="true" aria-labelledby="rwHead">
@@ -143,6 +173,13 @@ const KEY='questlog.v1';
 const DIFF={easy:{label:'Easy',xp:10,coins:5},medium:{label:'Medium',xp:25,coins:10},hard:{label:'Hard',xp:50,coins:20}};
 const TITLES=['Rookie','Tidy Apprentice','Task Runner','Chore Slayer','Routine Knight','Habit Hero','Household Legend'];
 const MAX_SHIELDS=3;
+const DAYN=['S','M','T','W','T','F','S'],DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const THEMES=[
+ {id:'midnight',name:'Midnight',cost:0,v:{'--bg':'#11131c','--panel':'#1b1e2b','--line':'#2d3144','--deep':'#141722','--btn':'#2a2e41','--xp':'#ffb53d','--xp2':'#ff7a45'}},
+ {id:'crimson',name:'Crimson',cost:150,v:{'--bg':'#170e12','--panel':'#241419','--line':'#3b2229','--deep':'#1b1014','--btn':'#3a2229','--xp':'#ff6b78','--xp2':'#c92a48'}},
+ {id:'royal',name:'Royal Knight',cost:150,v:{'--bg':'#0e1124','--panel':'#171b38','--line':'#2a3160','--deep':'#11142b','--btn':'#262c55','--xp':'#8db3ff','--xp2':'#4d6ee8'}},
+ {id:'frost',name:'Frozen Forest',cost:200,v:{'--bg':'#0b1517','--panel':'#13242a','--line':'#213c44','--deep':'#0e1b1f','--btn':'#1f3d46','--xp':'#7fe3ff','--xp2':'#3aa8d8'}}];
+const FLAME=['#6b7088','#ffb53d','#ff9a3d','#ff7a45','#ff5a3a','#7fd6ff'];
 const RANKS=[{name:'Unlit',at:0,bonus:0},{name:'Spark',at:1,bonus:0},{name:'Ember',at:3,bonus:10},{name:'Flame',at:7,bonus:25},{name:'Blaze',at:14,bonus:50},{name:'Starfire',at:30,bonus:100}];
 let tab='today',memory=null,storageOK=true;
 const FLOORS=[
@@ -170,7 +207,8 @@ function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(valid(s))re
 function save(){memory=JSON.stringify(S);try{localStorage.setItem(KEY,memory);storageOK=true}catch(e){storageOK=false}}
 let S=load();
 
-function ensure(){S.tower=S.tower||{floor:0,p:0,insight:0,dayOn:null,green:null};S.loopLog=S.loopLog||[];
+function ensure(){S.themes=S.themes||['midnight'];S.theme=S.theme||'midnight';S.hist=S.hist||{};if(S.lvlSeen===undefined)S.lvlSeen=levelInfo(S.xp).level;
+  S.tower=S.tower||{floor:0,p:0,insight:0,dayOn:null,green:null};S.loopLog=S.loopLog||[];
   if(S.timeline===undefined){S.timeline=S.streak||0;S.bestTimeline=S.streak||0;S.lastFull=S.lastDone||null;S.lastActive=S.lastDone||null;S.started=!!S.lastDone;S.lastRoll=today();S.undo=null;S.undoS=null}}
 function climbGain(t){const T=S.tower,hard=t.diff==='hard';switch(T.floor){case 0:case 2:return 1;case 3:return (hard?2:1)+T.insight;case 4:{const b={medium:10,hard:30}[t.diff]||0;return b?b+Math.min(S.streak,10)+5*T.insight:0}default:return 0}}
 function addClimb(n){const T=S.tower,F=FLOORS[T.floor];if(!F||n<=0)return;T.p+=n;if(T.p<F.goal)return;
@@ -178,7 +216,15 @@ function addClimb(n){const T=S.tower,F=FLOORS[T.floor];if(!F||n<=0)return;T.p+=n
   clearName.textContent='Floor '+F.n+': '+F.name;clearText.textContent='You earned '+F.prizeText+'.';clear.classList.add('on');if(!playSound('floor')&&!playSound('scorpion'))blip(700)}
 function towerFall(){const T=S.tower;if(T.floor<FLOORS.length&&[1,3,4,5].includes(T.floor)&&T.p>0){T.p=0;if(T.floor===3||T.floor===4)T.insight++}}
 function levelInfo(xp){let level=1,left=xp,need=100;while(left>=need){left-=need;level++;need=100+(level-1)*25}return{level,into:left,need}}
-function dailies(){return S.tasks.filter(t=>t.repeat==='daily')}
+const nextDay=ds=>{const d=parse(ds);d.setDate(d.getDate()+1);return dayStr(d)};
+const prevDay=ds=>{const d=parse(ds);d.setDate(d.getDate()-1);return dayStr(d)};
+function due(t,ds){return t.repeat==='daily'&&(!t.days||!t.days.length||t.days.includes(parse(ds).getDay()))}
+function dueOn(ds){return S.tasks.filter(t=>due(t,ds))}
+function restDay(ds){return dueOn(ds).length===0}
+function lastRequired(){let d=yesterday();for(let i=0;i<60;i++){if(!restDay(d))return d;d=prevDay(d)}return null}
+function dailies(){return dueOn(today())}
+function schedText(t){return t.days&&t.days.length&&t.days.length<7?[...t.days].sort().map(i=>DAYS[i]).join(', '):'Every day'}
+function titleFor(L){return TITLES[Math.min(Math.floor((L-1)/3),TITLES.length-1)]}
 function allDone(){const d=dailies();return d.length>0&&d.every(t=>t.doneOn===today())}
 
 function rankInfo(n){let i=0;RANKS.forEach((r,k)=>{if(n>=r.at)i=k});return{i,rank:RANKS[i],next:RANKS[i+1]}}
@@ -188,23 +234,26 @@ function rollover(){
   if(S.lastRoll===t){save();return}
   if(S.undo&&S.undo.day!==t)S.undo=null;
   if(S.undoS&&S.undoS.day!==t)S.undoS=null;
+  const L=lastRequired(),hasDaily=S.tasks.some(x=>x.repeat==='daily');
   if(S.fallen&&S.fallen.day!==t){
-    S.timeline=Math.floor(S.fallen.streak/7)*7;S.lastFull=S.timeline?y:null;S.fallen=null;
-    toast(S.timeline?'Back to your '+S.timeline+'-day checkpoint':'A new timeline begins');
-  }else if(S.started&&dailies().length&&S.lastFull!==y&&S.lastFull!==t){
-    const missed=dailies().filter(x=>x.doneOn!==y).map(x=>x.name).slice(0,4);
-    S.loops=(S.loops||0)+1;towerFall();
+    if(restDay(S.fallen.day)){S.fallen.day=t}
+    else{S.timeline=Math.floor(S.fallen.streak/7)*7;S.lastFull=S.timeline?(L||y):null;S.fallen=null;
+      toast(S.timeline?'Back to your '+S.timeline+'-day checkpoint':'A new timeline begins')}
+  }else if(S.started&&hasDaily&&L&&S.lastFull!==t&&(!S.lastFull||gapDays(S.lastFull,L)>0)){
+    const missed=dueOn(L).filter(x=>x.doneOn!==L).map(x=>x.name).slice(0,4);
+    S.loops=(S.loops||0)+1;towerFall();S.hist[L]=Object.assign({},S.hist[L],{r:1});
     S.loopLog.unshift({loop:S.loops,streak:S.timeline,day:t,missed});S.loopLog=S.loopLog.slice(0,30);
     S.fallen={streak:S.timeline,day:t,seen:false,missed};S.timeline=0;
   }
   if(S.lastActive&&S.streak>0){
-    const gap=gapDays(S.lastActive,t)-1;
+    let gap=0;for(let d=nextDay(S.lastActive),n=0;d<t&&n<400;d=nextDay(d),n++)if(!restDay(d))gap++;
     if(gap>0){
       if(S.shields>=gap){S.shields-=gap;toast(gap===1?'A shield saved your streak':gap+' shields saved your streak')}
       else{const R=rankInfo(S.streak);S.streak=R.i>0?RANKS[R.i-1].at:0;toast(S.streak?'Your streak cooled to '+S.streak+' days':'Your streak went out')}
       S.lastActive=S.streak?y:null;
     }
   }
+  Object.keys(S.hist).sort().slice(0,-60).forEach(k=>delete S.hist[k]);
   S.lastRoll=t;save();
 }
 function settleDay(){
@@ -228,18 +277,17 @@ function settleDay(){
     Object.assign(S,{timeline:S.undo.timeline,lastFull:S.undo.lastFull,bestTimeline:S.undo.bestT,fallen:S.undo.fallen});S.undo=null;
     if(S.tower.dayOn===t){S.tower.dayOn=null;S.tower.p=Math.max(0,S.tower.p-1)}
   }
+  const H=S.hist[t]||{};S.hist[t]={a:active?1:0,f:allDone()?1:0,r:H.r};
   return finished;
 }
-function toggle(id){
+function toggle(id,rect){
   const t=S.tasks.find(x=>x.id===id);if(!t)return;
   const d=DIFF[t.diff]||DIFF.easy,before=levelInfo(S.xp).level;
   let adding=t.doneOn!==today();
   if(!adding){t.doneOn=null;S.xp=Math.max(0,S.xp-(t.gotXp||d.xp));S.coins=Math.max(0,S.coins-d.coins);if(S.tower.floor===3||S.tower.floor===4){const lost=climbGain(t);if(lost&&S.tower.p){S.tower.p=Math.max(0,S.tower.p-lost);toast('The scorpion saw that. -'+lost+' '+FLOORS[S.tower.floor].unit)}}}
-  else{const gain=Math.round(d.xp*(1+rankInfo(S.streak).rank.bonus/100));t.gotXp=gain;t.doneOn=today();S.xp+=gain;S.coins+=d.coins;toast('+'+gain+' XP, +'+d.coins+' coins');if(t.climbed!==today()){t.climbed=today();addClimb(climbGain(t))}}
+  else{const gain=Math.round(d.xp*(1+rankInfo(S.streak).rank.bonus/100));t.gotXp=gain;t.doneOn=today();S.xp+=gain;S.coins+=d.coins;toast('+'+gain+' XP, +'+d.coins+' coins');justDone=id;if(rect)floatText('+'+gain+' XP',rect);if(t.climbed!==today()){t.climbed=today();addClimb(climbGain(t))}}
   const finished=settleDay();
   if(finished)celebrate();else if(adding&&!playSound('rbd'))blip(520);
-  const after=levelInfo(S.xp).level;
-  if(after>before){blip(780);toast('Level up! You reached level '+after)}
   commit();
 }
 function openChest(){
@@ -251,9 +299,15 @@ function openChest(){
   else{const n=20+Math.floor(Math.random()*31);S.coins+=n;msg='Chest: +'+n+' coins'}
   blip(660);toast(msg);commit();
 }
-function commit(){save();render()}
+function commit(){levelCheck();save();render()}
+let justDone=null;
+function floatText(txt,r){const el=document.createElement('div');el.className='float';el.textContent=txt;el.style.left=(r.left+r.width/2)+'px';el.style.top=(r.top+r.height/2-12)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1200)}
+function levelCheck(){const L=levelInfo(S.xp).level;if(S.lvlSeen===undefined)S.lvlSeen=L;if(L>S.lvlSeen){S.lvlSeen=L;showLevel(L)}else if(L<S.lvlSeen)S.lvlSeen=L}
+function showLevel(L){lvlNum.textContent=L;lvlTitle.textContent=titleFor(L);lvlSub.textContent='Your quests are paying off.';const cols=['#ffb53d','#ff7a45','#58d6a4','#7fa8ff','#ffffff'];let h='';for(let i=0;i<40;i++)h+=`<i style="left:${(Math.random()*100).toFixed(1)}%;background:${cols[i%5]};animation-duration:${(2.2+Math.random()*2).toFixed(2)}s;animation-delay:${(Math.random()*.8).toFixed(2)}s"></i>`;confetti.innerHTML=h;lvlup.classList.add('on');if(!playSound('level'))[523,659,784].forEach((f,i)=>setTimeout(()=>blip(f),i*140))}
+function applyTheme(){const th=THEMES.find(x=>x.id===S.theme)||THEMES[0],r=document.documentElement;if(r.dataset.theme===th.id)return;r.dataset.theme=th.id;Object.entries(th.v).forEach(([k,v])=>r.style.setProperty(k,v));const m=document.querySelector('meta[name=theme-color]');if(m)m.content=th.v['--bg']}
+function strip(){let h='',f=0,a=0;for(let k=6;k>=0;k--){const d=new Date();d.setDate(d.getDate()-k);const ds=dayStr(d),H=S.hist[ds]||{};const c=H.f?'f':H.r?'r':H.a?'a':restDay(ds)?'z':'';if(H.f)f++;else if(H.a)a++;h+=`<div class="day ${c} ${k===0?'now':''}"><span>${DAYN[d.getDay()]}</span><i></i></div>`}return `<div class="strip" role="img" aria-label="Last 7 days: ${f} full days, ${a} partial days">${h}</div>`}
 let audio;
-const SLOTS=[['rbd','Quest complete sound','audio'],['scorpion','All quests complete sound','audio'],['call1','Rewind sound 1','audio'],['call2','Rewind sound 2','audio'],['floor','Tower floor cleared sound','audio'],['popup','All quests complete picture','image']];
+const SLOTS=[['rbd','Quest complete sound','audio'],['scorpion','All quests complete sound','audio'],['call1','Rewind sound 1','audio'],['call2','Rewind sound 2','audio'],['floor','Tower floor cleared sound','audio'],['level','Level up sound','audio'],['popup','All quests complete picture','image']];
 const media={},buffers={};let current,winUrl,dbP;
 function ctx(){audio=audio||new(window.AudioContext||window.webkitAudioContext)();return audio}
 function blip(f){try{const c=ctx();c.resume();const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.setValueAtTime(.05,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.16);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.16)}catch(e){}}
@@ -269,21 +323,29 @@ function celebrate(){if(!playSound('scorpion'))blip(780);showWin()}
 let toastTimer;
 function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('on'),2200)}
 
-function taskRow(t){
-  const d=DIFF[t.diff]||DIFF.easy,done=t.doneOn===today();
-  return `<div class="row ${done?'done':''}"><button class="check" data-toggle="${esc(t.id)}" aria-label="${done?'Undo':'Complete'} ${esc(t.name)}">${done?'✓':''}</button>
-  <button class="info" data-toggle="${esc(t.id)}"><span class="name">${esc(t.name)}</span><span class="meta">${d.label} · ${d.xp} XP · ${d.coins} coins</span></button>
-  <button class="x" data-del-task="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">×</button></div>`}
+let editing=null;
+function taskRow(t,later){
+  const d=DIFF[t.diff]||DIFF.easy,done=t.doneOn===today(),meta=`${d.label} · ${d.xp} XP · ${d.coins} coins${t.days&&t.days.length&&t.days.length<7?' · '+schedText(t):''}`;
+  const left=later?`<span class="check" aria-hidden="true"></span>`:`<button class="check" data-toggle="${esc(t.id)}" aria-label="${done?'Undo':'Complete'} ${esc(t.name)}">${done?'✓':''}</button>`;
+  const body=later?`<div class="info"><span class="name">${esc(t.name)}</span><span class="meta">${meta}</span></div>`:`<button class="info" data-toggle="${esc(t.id)}"><span class="name">${esc(t.name)}</span><span class="meta">${meta}</span></button>`;
+  return `<div class="row ${done?'done':''} ${later?'later':''} ${justDone===t.id?'just':''}">${left}${body}
+  <button class="x" data-edit="${esc(t.id)}" aria-label="Edit ${esc(t.name)}">✎</button><button class="x" data-del-task="${esc(t.id)}" aria-label="Delete ${esc(t.name)}">×</button></div>`}
+function questForm(){
+  const e=S.tasks.find(t=>t.id===editing),days=(e&&e.days)||[];
+  return `<form id="addTask"><input id="taskName" maxlength="80" required placeholder="Take out the trash" aria-label="Quest name" value="${e?esc(e.name):''}">
+  <div class="two"><select id="taskDiff" aria-label="Difficulty">${['easy','medium','hard'].map(k=>`<option value="${k}" ${e&&e.diff===k?'selected':''}>${DIFF[k].label}, ${DIFF[k].xp} XP</option>`).join('')}</select>
+  <select id="taskRepeat" aria-label="Repeat"><option value="daily">Repeats</option><option value="once" ${e&&e.repeat==='once'?'selected':''}>One time</option></select></div>
+  <div id="dayChips" ${e&&e.repeat==='once'?'hidden':''}><p>Days it repeats. Leave all off for every day.</p><div class="chips">${DAYN.map((n,i)=>`<label class="chip"><input type="checkbox" value="${i}" ${days.includes(i)?'checked':''} aria-label="${DAYS[i]}"><span>${n}</span></label>`).join('')}</div></div>
+  <button class="btn main">${e?'Save quest':'Add quest'}</button>${e?'<button type="button" class="btn" id="cancelEdit">Cancel</button>':''}</form>`}
 function viewToday(){
-  const ds=dailies(),once=S.tasks.filter(t=>t.repeat!=='daily'),n=ds.filter(t=>t.doneOn===today()).length,opened=S.chestOn===today(),ready=allDone()&&!opened;
+  const ds=dailies(),later=S.tasks.filter(t=>t.repeat==='daily'&&!due(t,today())),once=S.tasks.filter(t=>t.repeat!=='daily'),n=ds.filter(t=>t.doneOn===today()).length,opened=S.chestOn===today(),ready=allDone()&&!opened;
   const trial=S.fallen?`<div class="trial"><b>Second chance: loop ${S.loops||1}</b><span>Finish every daily today to restore your ${S.fallen.streak}-day timeline.</span></div>`:'';
   const R=rankInfo(S.streak),rankCard=`<div class="chest locked"><div><b>${R.rank.name} streak${R.rank.bonus?': +'+R.rank.bonus+'% XP':''}</b><span>${R.next?(R.next.at-S.streak)+' more active '+(R.next.at-S.streak===1?'day':'days')+' to '+R.next.name+' (+'+R.next.bonus+'% XP)':'Highest rank reached'}. One quest a day keeps it lit.</span></div></div>`;
-  return `${trial}${rankCard}<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':`${n} of ${ds.length} dailies done`}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
-  <h2>Daily quests</h2>${ds.map(taskRow).join('')||'<p>Add a daily quest to start your streak.</p>'}
-  ${once.length?'<h2>One-time quests</h2>'+once.map(taskRow).join(''):''}
-  <h2>Add a quest</h2><form id="addTask"><input id="taskName" maxlength="80" required placeholder="Take out the trash" aria-label="Quest name">
-  <div class="two"><select id="taskDiff" aria-label="Difficulty"><option value="easy">Easy, 10 XP</option><option value="medium">Medium, 25 XP</option><option value="hard">Hard, 50 XP</option></select>
-  <select id="taskRepeat" aria-label="Repeat"><option value="daily">Every day</option><option value="once">One time</option></select></div><button class="btn main">Add quest</button></form>`}
+  return `${trial}${rankCard}${strip()}<div class="chest ${ready?'':'locked'}"><div><b>Daily chest</b><span>${opened?'Opened. A new one comes tomorrow.':ready?'Ready to open':ds.length?`${n} of ${ds.length} dailies done`:'Rest day. Nothing is due today.'}</span></div><button class="btn ${ready?'main':''}" id="chest" ${ready?'':'disabled'}>Open</button></div>
+  <h2>Daily quests</h2>${ds.map(t=>taskRow(t)).join('')||'<p>Nothing due today. Enjoy the rest day, or add a quest below.</p>'}
+  ${once.length?'<h2>One-time quests</h2>'+once.map(t=>taskRow(t)).join(''):''}
+  ${later.length?'<h2>Not today</h2>'+later.map(t=>taskRow(t,true)).join(''):''}
+  <h2>${editing?'Edit quest':'Add a quest'}</h2>${questForm()}`}
 function towerArt(){
   const fl=S.tower.floor,R=i=>{const x=Math.sin(i*91.7)*43758.5;return x-Math.floor(x)};
   const B=380,TOP=48,H=(B-TOP)/6;
@@ -318,9 +380,10 @@ function viewTower(){
   const green=T.floor>2?`<div class="chest ${T.green===today()?'locked':''}"><div><b>Green Room</b><span>${T.green===today()?'Rested. Come back tomorrow.':'Rest for 10 XP and 5 coins.'}</span></div><button class="btn ${T.green===today()?'':'main'}" id="rest" ${T.green===today()?'disabled':''}>Rest</button></div>`:'';
   const lib=T.floor>3?'<h2>Library of past loops</h2>'+(S.loopLog.map(l=>`<div class="row"><div class="info"><span class="name">Loop ${l.loop}: ${l.streak}-day timeline</span><span class="meta">${esc(l.day)}${l.missed&&l.missed.length?' · Fell to: '+l.missed.map(esc).join(', '):''}</span></div></div>`).join('')||'<p>No books yet. Your timelines are still intact.</p>'):'';
   return towerArt()+`<p>The scorpion at the gate is watching your climb.</p>`+card+green+lib+'<h2>Floors</h2><div class="card">'+FLOORS.map((f,i)=>`<div class="floorline ${i<T.floor?'ok':i===T.floor?'now':''}"><span>${f.n}. ${f.name}</span><span>${i<T.floor?'Cleared':i===T.floor?'Climbing':'Locked'}</span></div>`).reverse().join('')+'</div>'}
+function themeRows(){return '<h2>Themes</h2>'+THEMES.map(th=>{const own=S.themes.includes(th.id),on=S.theme===th.id;return `<div class="row"><span class="sw" style="background:linear-gradient(145deg,${th.v['--xp']},${th.v['--xp2']})"></span><div class="info"><span class="name">${th.name}</span><span class="meta">${on?'Equipped':own?'Owned':th.cost+' coins'}</span></div><button class="btn ${!own&&S.coins>=th.cost?'main':''}" data-theme-pick="${th.id}" ${on||(!own&&S.coins<th.cost)?'disabled':''}>${on?'Equipped':own?'Equip':'Unlock'}</button></div>`}).join('')}
 function viewRewards(){
   return `<p>Spend coins on real-life treats you choose.</p>${S.rewards.map(r=>`<div class="row"><div class="info"><span class="name">${esc(r.name)}</span><span class="meta">${r.cost} coins</span></div><button class="btn ${S.coins>=r.cost?'main':''}" data-buy="${esc(r.id)}" ${S.coins>=r.cost?'':'disabled'}>Redeem</button><button class="x" data-del-reward="${esc(r.id)}" aria-label="Delete ${esc(r.name)}">×</button></div>`).join('')}
-  <h2>Add a reward</h2><form id="addReward"><input id="rewardName" maxlength="80" required placeholder="Coffee out" aria-label="Reward name"><input id="rewardCost" type="number" inputmode="numeric" min="1" max="100000" required placeholder="Cost in coins" aria-label="Cost in coins"><button class="btn main">Add reward</button></form>`}
+  <h2>Add a reward</h2><form id="addReward"><input id="rewardName" maxlength="80" required placeholder="Coffee out" aria-label="Reward name"><input id="rewardCost" type="number" inputmode="numeric" min="1" max="100000" required placeholder="Cost in coins" aria-label="Cost in coins"><button class="btn main">Add reward</button></form>${themeRows()}`}
 function viewMore(){
   return `<h2>Your sounds and picture</h2><p>These stay private on this device and are not included in backup codes. Add them from the installed app.</p>
   ${SLOTS.map(([k,n,type])=>`<div class="row slot"><div class="info"><span class="name">${n}</span><span class="meta">${media[k]?'Added':'Not added'}</span></div>${media[k]?`<button class="btn" data-test="${k}">Test</button><button class="btn" data-remove="${k}">Remove</button>`:`<label class="btn main">Choose<input type="file" data-slot="${k}" accept="${type==='audio'?'audio/*,.mp3,.m4a':'image/*,.gif'}"></label>`}</div>`).join('')}
@@ -330,17 +393,21 @@ function viewMore(){
   <h2>Stats</h2><p>Best streak: ${S.best||0} days · Best timeline: ${S.bestTimeline||0} days · Total XP: ${S.xp} · Loops: ${S.loops||0}</p><button class="btn" id="preview">Preview the rewind</button>${storageOK?'':'<p>This browser is blocking saved data, so copy a backup before closing.</p>'}`}
 function render(){
   const L=levelInfo(S.xp),pct=Math.round(L.into/L.need*100);
-  level.textContent=L.level;title.textContent=TITLES[Math.min(Math.floor((L.level-1)/3),TITLES.length-1)];
+  applyTheme();level.textContent=L.level;title.textContent=titleFor(L.level);
   xpText.textContent=L.into+' / '+L.need+' XP to level '+(L.level+1);bar.style.width=pct+'%';barWrap.setAttribute('aria-valuenow',pct);
-  streak.textContent=S.streak;timelineN.textContent=S.timeline;shields.textContent=S.shields+'/'+MAX_SHIELDS;coins.textContent=S.coins;
+  streak.innerHTML=`<svg class="flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-4 3-7 1 1 2 2 2 4 1-2 1-6 1-9z" fill="${FLAME[rankInfo(S.streak).i]}"/></svg>${S.streak}`;timelineN.textContent=S.timeline;shields.textContent=S.shields+'/'+MAX_SHIELDS;coins.textContent=S.coins;
   const top=view.scrollTop;view.innerHTML=tab==='today'?viewToday():tab==='tower'?viewTower():tab==='rewards'?viewRewards():viewMore();view.scrollTop=top;
   document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));
+  justDone=null;
 }
-document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;view.scrollTop=0;render()}};
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;view.scrollTop=0;render();view.classList.remove('swap');void view.offsetWidth;view.classList.add('swap');setTimeout(()=>view.classList.remove('swap'),450)}};
 view.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;const D=b.dataset;
-  if(D.toggle)toggle(D.toggle);
-  else if(D.delTask){S.tasks=S.tasks.filter(t=>t.id!==D.delTask);settleDay();commit()}
+  if(D.toggle)toggle(D.toggle,b.getBoundingClientRect());
+  else if(D.edit){editing=D.edit;render();document.getElementById('addTask').scrollIntoView({block:'center'})}
+  else if(b.id==='cancelEdit'){editing=null;render()}
+  else if(D.themePick){const th=THEMES.find(x=>x.id===D.themePick);if(th){if(S.themes.includes(th.id))S.theme=th.id;else if(S.coins>=th.cost){S.coins-=th.cost;S.themes.push(th.id);S.theme=th.id;blip(700);toast(th.name+' unlocked')}commit()}}
+  else if(D.delTask){S.tasks=S.tasks.filter(t=>t.id!==D.delTask);if(editing===D.delTask)editing=null;settleDay();commit()}
   else if(D.delReward){S.rewards=S.rewards.filter(r=>r.id!==D.delReward);commit()}
   else if(D.buy){const r=S.rewards.find(x=>x.id===D.buy);if(r&&S.coins>=r.cost){S.coins-=r.cost;blip(700);toast('Enjoy: '+r.name);commit()}}
   else if(D.test){if(D.test==='popup')showWin();else playSound(D.test)}
@@ -351,13 +418,19 @@ view.addEventListener('click',async e=>{
   else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
   else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
 });
-view.addEventListener('change',e=>{const k=e.target.dataset.slot,f=e.target.files&&e.target.files[0];if(k&&f)addMedia(k,f)});
+view.addEventListener('change',e=>{if(e.target.id==='taskRepeat')document.getElementById('dayChips').hidden=e.target.value==='once';const k=e.target.dataset.slot,f=e.target.files&&e.target.files[0];if(k&&f)addMedia(k,f)});
+lvlGo.onclick=()=>lvlup.classList.remove('on');
 clearGo.onclick=()=>clear.classList.remove('on');
 winGo.onclick=()=>win.classList.remove('on');
 document.addEventListener('pointerdown',()=>{try{if(audio)audio.resume()}catch(e){}},{passive:true});
 view.addEventListener('submit',e=>{
   e.preventDefault();
-  if(e.target.id==='addTask'){const name=taskName.value.trim();if(name){S.tasks.push({id:uid(),name,diff:taskDiff.value,repeat:taskRepeat.value,doneOn:null});settleDay();commit()}}
+  if(e.target.id==='addTask'){const name=taskName.value.trim();if(name){
+    let days=[...document.querySelectorAll('#dayChips input:checked')].map(i=>+i.value);if(days.length===0||days.length===7||taskRepeat.value==='once')days=undefined;
+    const e0=S.tasks.find(t=>t.id===editing);
+    if(e0){Object.assign(e0,{name,diff:taskDiff.value,repeat:taskRepeat.value,days});toast('Quest saved')}
+    else S.tasks.push({id:uid(),name,diff:taskDiff.value,repeat:taskRepeat.value,days,doneOn:null});
+    editing=null;settleDay();commit()}}
   if(e.target.id==='addReward'){const name=rewardName.value.trim(),cost=Math.floor(+rewardCost.value);if(name&&cost>0){S.rewards.push({id:uid(),name,cost});commit()}}
 });
 function showRewind(f,demo){
