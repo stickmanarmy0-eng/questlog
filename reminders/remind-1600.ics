@@ -1,0 +1,24 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Questlog//Reminder//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Questlog reminder 16:00
+REFRESH-INTERVAL;VALUE=DURATION:P7D
+X-PUBLISHED-TTL:P7D
+BEGIN:VEVENT
+UID:questlog-1600@stickmanarmy0-eng.github.io
+DTSTAMP:20261119T000000Z
+DTSTART:20261119T160000
+DURATION:PT15M
+RRULE:FREQ=DAILY
+SUMMARY:Questlog: finish your quests
+DESCRIPTION:Open Questlog and finish your daily quests before your timeline ends.
+URL:https://stickmanarmy0-eng.github.io/questlog/
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Finish your Questlog quests
+TRIGGER:PT0S
+END:VALARM
+END:VEVENT
+END:VCALENDAR

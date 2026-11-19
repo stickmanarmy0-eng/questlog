@@ -85,7 +85,7 @@ p{margin:0;color:var(--muted);font-size:14px}
 #win img{display:block;max-width:100%;max-height:68vh;border-radius:20px;border:2px solid var(--xp);animation:pop .4s cubic-bezier(.2,1.5,.4,1) both}
 #win b{font-size:22px}
 @keyframes pop{from{transform:scale(.4);opacity:0}}
-.slot{flex-wrap:wrap}.slot .btn{display:inline-grid;place-content:center;font-size:14px;min-height:40px;padding:0 12px}
+.slot{flex-wrap:wrap}.slot .info{min-width:110px}.slot .btn{display:inline-grid;place-content:center;font-size:14px;min-height:40px;padding:0 12px}
 .slot input{display:none}
 #clear{position:fixed;inset:0;z-index:7;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:rgba(7,8,20,.94)}
 #clear.on{display:flex}#clear b{font-size:26px}#clear p{max-width:30ch}
@@ -117,6 +117,9 @@ main>*{flex:none}
 .chip input{position:absolute;opacity:0;width:0;min-height:0;padding:0;border:0;pointer-events:none}
 .chip span{display:grid;place-content:center;height:42px;border-radius:11px;background:var(--deep);border:1px solid var(--line);font-weight:700;color:var(--muted)}
 .chip input:checked+span{background:var(--xp);border-color:var(--xp);color:#22130a}.chip input:focus-visible+span{outline:2px solid var(--blue)}
+.iconprev{width:60px;height:60px;border-radius:14px;flex:none;display:block;border:1px solid var(--line);object-fit:cover}
+a.btn{display:inline-grid;place-content:center;text-decoration:none;color:inherit}a.btn.main{color:#22130a}
+ol.steps{margin:0;padding-left:20px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:5px}
 .sw{width:30px;height:30px;flex:none;border-radius:50%}
 .row.later{opacity:.7}
 .flame{width:16px;height:16px;vertical-align:-2px;margin-right:3px}
@@ -384,8 +387,30 @@ function themeRows(){return '<h2>Themes</h2>'+THEMES.map(th=>{const own=S.themes
 function viewRewards(){
   return `<p>Spend coins on real-life treats you choose.</p>${S.rewards.map(r=>`<div class="row"><div class="info"><span class="name">${esc(r.name)}</span><span class="meta">${r.cost} coins</span></div><button class="btn ${S.coins>=r.cost?'main':''}" data-buy="${esc(r.id)}" ${S.coins>=r.cost?'':'disabled'}>Redeem</button><button class="x" data-del-reward="${esc(r.id)}" aria-label="Delete ${esc(r.name)}">×</button></div>`).join('')}
   <h2>Add a reward</h2><form id="addReward"><input id="rewardName" maxlength="80" required placeholder="Coffee out" aria-label="Reward name"><input id="rewardCost" type="number" inputmode="numeric" min="1" max="100000" required placeholder="Cost in coins" aria-label="Cost in coins"><button class="btn main">Add reward</button></form>${themeRows()}`}
+const REM_BASE='webcal://stickmanarmy0-eng.github.io/questlog/reminders/remind-';
+const standalone=()=>navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+function remLink(){return REM_BASE+(S.remindTime||'2000')+'.ics'}
+function timeOptions(){let o='';for(let h=6;h<24;h++)for(const m of [0,30]){const v=pad(h)+pad(m),h12=h%12||12;o+=`<option value="${v}" ${(S.remindTime||'2000')===v?'selected':''}>${h12}:${pad(m)} ${h<12?'AM':'PM'}</option>`}return o}
+function iconData(){try{return localStorage.getItem('questlog.icon')}catch(e){return null}}
+function applyIcon(){const l=document.querySelector('link[rel=apple-touch-icon]'),d=iconData();if(l)l.href=d||'icon-180.png'}
+async function setIcon(file){
+  try{const url=URL.createObjectURL(file),img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src=url});
+    const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d'),m=Math.min(img.width,img.height);
+    x.fillStyle='#11131c';x.fillRect(0,0,180,180);x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,180,180);URL.revokeObjectURL(url);
+    localStorage.setItem('questlog.icon',c.toDataURL('image/png'));applyIcon();toast('Icon ready. Now add the app to your Home Screen.');render()}
+  catch(e){toast('That image would not load. Try a different picture.')}}
+function iconSection(){
+  const d=iconData();
+  if(standalone())return `<h2>App icon</h2><p>iPhone only picks a Home Screen icon when the app is added. To use your own picture:</p>
+  <ol class="steps"><li>Copy your backup code below.</li><li>Open stickmanarmy0-eng.github.io/questlog in Safari, not the app.</li><li>Go to Settings, App icon, and choose your picture.</li><li>Tap Share, then Add to Home Screen.</li><li>Open the new icon and restore your backup. Add your sounds again there too.</li></ol>`;
+  return `<h2>App icon</h2><p>Pick a picture, then add Questlog to your Home Screen from Safari's Share menu. The icon is read when you add it.</p>
+  <div class="row slot">${d?`<img class="iconprev" src="${d}" alt="Your chosen icon">`:''}<div class="info"><span class="name">${d?'Your icon':'Default icon'}</span><span class="meta">Square pictures work best</span></div>${d?'<button class="btn" id="iconReset">Reset</button>':''}<label class="btn main">Choose picture<input type="file" id="iconFile" accept="image/*"></label></div>`}
 function viewMore(){
-  return `<h2>Your sounds and picture</h2><p>These stay private on this device and are not included in backup codes. Add them from the installed app.</p>
+  return `<h2>Daily reminder</h2><p>Questlog can't send notifications by itself on iPhone, so the reminder comes from your Calendar app. It works even when Questlog is closed.</p>
+  <div class="row slot"><div class="info"><span class="name">Remind me at</span></div><select id="remTime" aria-label="Reminder time" style="width:auto;min-width:120px">${timeOptions()}</select><a class="btn main" id="remLink" href="${remLink()}">Add reminder</a></div>
+  <p>Tap Add reminder, then Subscribe in Calendar. To change the time later, delete the old Questlog reminder calendar and add a new one.</p>
+  ${iconSection()}
+  <h2>Your sounds and picture</h2><p>These stay private on this device and are not included in backup codes. Add them from the installed app.</p>
   ${SLOTS.map(([k,n,type])=>`<div class="row slot"><div class="info"><span class="name">${n}</span><span class="meta">${media[k]?'Added':'Not added'}</span></div>${media[k]?`<button class="btn" data-test="${k}">Test</button><button class="btn" data-remove="${k}">Remove</button>`:`<label class="btn main">Choose<input type="file" data-slot="${k}" accept="${type==='audio'?'audio/*,.mp3,.m4a':'image/*,.gif'}"></label>`}</div>`).join('')}
   <h2>Back up your progress</h2><p>Your progress lives only on this device. Copy this code now and then, and keep it in Notes.</p>
   <button class="btn main" id="copy">Copy backup code</button><textarea id="out" readonly aria-label="Backup code">${esc(JSON.stringify(S))}</textarea>
@@ -405,6 +430,7 @@ view.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;const D=b.dataset;
   if(D.toggle)toggle(D.toggle,b.getBoundingClientRect());
   else if(D.edit){editing=D.edit;render();document.getElementById('addTask').scrollIntoView({block:'center'})}
+  else if(b.id==='iconReset'){try{localStorage.removeItem('questlog.icon')}catch(err){}applyIcon();render()}
   else if(b.id==='cancelEdit'){editing=null;render()}
   else if(D.themePick){const th=THEMES.find(x=>x.id===D.themePick);if(th){if(S.themes.includes(th.id))S.theme=th.id;else if(S.coins>=th.cost){S.coins-=th.cost;S.themes.push(th.id);S.theme=th.id;blip(700);toast(th.name+' unlocked')}commit()}}
   else if(D.delTask){S.tasks=S.tasks.filter(t=>t.id!==D.delTask);if(editing===D.delTask)editing=null;settleDay();commit()}
@@ -418,7 +444,8 @@ view.addEventListener('click',async e=>{
   else if(b.id==='copy'){const o=document.getElementById('out');try{await navigator.clipboard.writeText(o.value);toast('Backup copied')}catch(err){o.focus();o.select();toast('Select the code and copy it')}}
   else if(b.id==='restore'){try{const s=JSON.parse(document.getElementById('in').value);if(!valid(s))throw 0;S=s;rollover();tab='today';render();toast('Backup restored')}catch(err){toast('That code did not work. Paste the whole backup.')}}
 });
-view.addEventListener('change',e=>{if(e.target.id==='taskRepeat')document.getElementById('dayChips').hidden=e.target.value==='once';const k=e.target.dataset.slot,f=e.target.files&&e.target.files[0];if(k&&f)addMedia(k,f)});
+view.addEventListener('change',e=>{if(e.target.id==='remTime'){S.remindTime=e.target.value;save();document.getElementById('remLink').href=remLink()}
+  if(e.target.id==='iconFile'&&e.target.files[0])setIcon(e.target.files[0]);if(e.target.id==='taskRepeat')document.getElementById('dayChips').hidden=e.target.value==='once';const k=e.target.dataset.slot,f=e.target.files&&e.target.files[0];if(k&&f)addMedia(k,f)});
 lvlGo.onclick=()=>lvlup.classList.remove('on');
 clearGo.onclick=()=>clear.classList.remove('on');
 winGo.onclick=()=>win.classList.remove('on');
@@ -455,7 +482,7 @@ function showRewind(f,demo){
 function maybeRewind(){if(S.fallen&&!S.fallen.seen)showRewind(S.fallen)}
 let seen=today();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&seen!==today()){seen=today();rollover();render();maybeRewind()}});
-rollover();render();loadMedia().then(maybeRewind);
+applyIcon();rollover();render();loadMedia().then(maybeRewind);
 if('serviceWorker'in navigator&&location.protocol==='https:'){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
 </script>
 </body>
