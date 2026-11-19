@@ -88,6 +88,11 @@ p{margin:0;color:var(--muted);font-size:14px}
 #clear{position:fixed;inset:0;z-index:7;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:rgba(7,8,20,.94)}
 #clear.on{display:flex}#clear b{font-size:26px}#clear p{max-width:30ch}
 main>*{flex:none}
+.drift{animation:drift 38s ease-in-out infinite alternate}.drift2{animation-duration:55s;animation-direction:alternate-reverse}
+.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes drift{from{transform:translateX(-14px)}to{transform:translateX(14px)}}
+@keyframes pulse{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.drift,.pulse{animation:none!important}}
 .sky{display:block;width:100%;height:auto;border-radius:18px;border:1px solid var(--line)}
 .card{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
 .card h3{margin:0;font-size:18px}.card .bar{margin:0}
@@ -281,15 +286,30 @@ function viewToday(){
   <select id="taskRepeat" aria-label="Repeat"><option value="daily">Every day</option><option value="once">One time</option></select></div><button class="btn main">Add quest</button></form>`}
 function towerArt(){
   const fl=S.tower.floor,R=i=>{const x=Math.sin(i*91.7)*43758.5;return x-Math.floor(x)};
-  let o='<svg class="sky" viewBox="0 0 360 340" role="img" aria-label="Tower progress: '+fl+' of 6 floors cleared"><defs><linearGradient id="n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#090c22"/><stop offset=".75" stop-color="#27264f"/><stop offset="1" stop-color="#a8704a"/></linearGradient></defs><rect width="360" height="340" fill="url(#n)"/>';
-  for(let i=0;i<70;i++)o+=`<circle cx="${(R(i)*360).toFixed(1)}" cy="${(R(i+200)*235).toFixed(1)}" r="${(.5+R(i+400)*1.1).toFixed(1)}" fill="#fff" opacity="${(.35+R(i+600)*.6).toFixed(2)}"/>`;
-  [[52,34],[70,52],[42,66],[88,28],[104,62],[76,84],[30,40]].forEach(([x,y],i)=>o+=`<circle cx="${x}" cy="${y}" r="2.6" fill="${i<fl?'#ffb53d':'#596080'}"/>`);
-  for(let i=0;i<6;i++){const y=270-i*38,b=64-i*7,t=b-6,on=i<fl,now=i===fl;
-    o+=`<path d="M${180-b} ${y}L${180-t} ${y-34}H${180+t}L${180+b} ${y}Z" fill="${on?'#d9c49b':now?'#8d86a8':'#3a3b5a'}" stroke="#14152b"/><rect x="${180-b-3}" y="${y-3}" width="${2*b+6}" height="5" fill="${on?'#ffb53d':'#25264a'}"/>`;
-    for(let w=-1;w<=1;w++)o+=`<rect x="${180+w*t*.55-3}" y="${y-25}" width="6" height="13" rx="3" fill="${on||now?'#ffdf98':'#1c1d38'}"/>`}
-  o+='<path d="M180 16 196 44H164Z" fill="'+(fl>=6?'#ffb53d':'#3a3b5a')+'" stroke="#14152b"/>';
-  o+='<path d="M0 292C70 262 120 302 190 282S300 262 360 288V340H0Z" fill="#c08a58"/><path d="M0 320C80 292 170 332 250 306S330 300 360 312V340H0Z" fill="#8f5f41"/>';
-  if(fl<6){const y=255-fl*38;o+=`<path d="M${248-fl*7} ${y-9}l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#ffb53d"/>`}
+  const B=380,TOP=48,H=(B-TOP)/6;
+  const P=[{x0:180,x1:180,top:48,wb:34,wt:15},{x0:162,x1:136,top:108,wb:24,wt:11},{x0:198,x1:224,top:96,wb:24,wt:11}];
+  const at=(p,y)=>{const k=(B-y)/(B-p.top);return{x:p.x0+(p.x1-p.x0)*k,w:p.wb+(p.wt-p.wb)*k}};
+  const cloud=(cx,cy,sc,seed)=>{let a='',b='';for(let i=0;i<20;i++){const x=(cx+(R(seed+i)-.5)*110*sc).toFixed(1),y=(cy+(R(seed+i+50)-.5)*22*sc).toFixed(1),r=((5+R(seed+i+90)*7)*sc).toFixed(1);b+=`<circle cx="${x}" cy="${(+y+4*sc).toFixed(1)}" r="${r}"/>`;a+=`<circle cx="${x}" cy="${y}" r="${r}"/>`}return `<g fill="#b4cdee">${b}</g><g fill="#fff" opacity=".96">${a}</g>`};
+  let o=`<svg class="sky" viewBox="0 0 360 450" role="img" aria-label="Tower progress: ${fl} of 6 floors cleared"><defs>
+<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b72d3"/><stop offset=".55" stop-color="#6fb0ec"/><stop offset="1" stop-color="#d4e9f8"/></linearGradient>
+<linearGradient id="pl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f1f4ff"/><stop offset=".55" stop-color="#cdd6f3"/><stop offset="1" stop-color="#97a3d2"/></linearGradient>
+<linearGradient id="d1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3cd7c"/><stop offset="1" stop-color="#d9a04e"/></linearGradient>
+<radialGradient id="gl"><stop offset="0" stop-color="#ffd978" stop-opacity=".9"/><stop offset="1" stop-color="#ffd978" stop-opacity="0"/></radialGradient></defs>
+<rect width="360" height="450" fill="url(#sk)"/>`;
+  o+='<g class="drift">'+cloud(55,40,1.1,1)+cloud(305,58,1.2,7)+cloud(180,22,1,13)+cloud(100,120,1.2,21)+cloud(285,140,1.2,29)+cloud(40,175,1,71)+cloud(335,200,1.1,77)+'</g><g class="drift drift2">'+cloud(70,235,1.2,37)+cloud(300,262,1.3,43)+cloud(180,222,1.1,51)+cloud(60,318,1.1,59)+cloud(300,336,1.1,67)+cloud(190,348,.9,83)+'</g>';
+  if(fl>=6)o+='<circle cx="180" cy="40" r="52" fill="url(#gl)" class="pulse"/>';
+  P.forEach(p=>{const a=at(p,B),t=at(p,p.top);
+    o+=`<path d="M${a.x-a.w/2} ${B}L${t.x-t.w/2} ${p.top}L${t.x} ${p.top-16}L${t.x+t.w/2} ${p.top}L${a.x+a.w/2} ${B}Z" fill="url(#pl)"/><path d="M${a.x+a.w*.12} ${B}L${t.x+t.w*.1} ${p.top}L${t.x+t.w/2} ${p.top}L${a.x+a.w/2} ${B}Z" fill="#7f8cc4" opacity=".28"/>`;
+    for(let i=1;i<=6;i++){const y=B-i*H;if(y<p.top)continue;const q=at(p,y),on=i<=fl;o+=`<line x1="${q.x-q.w/2}" x2="${q.x+q.w/2}" y1="${y}" y2="${y}" stroke="${on?'#ffb53d':'#8d99c9'}" stroke-width="${on?2.4:1.2}" opacity="${on?1:.55}"/>`}});
+  for(let i=0;i<6;i++){const y=B-(i+.5)*H,on=i<fl,now=i===fl;
+    if(on)o+=`<circle cx="180" cy="${y}" r="15" fill="url(#gl)" opacity=".8"/>`;
+    o+=`<rect x="178.5" y="${y-8}" width="3" height="16" rx="1.5" fill="${on?'#ffd978':now?'#ffffff':'#a9b4dc'}" ${now?'class="pulse"':''}/>`}
+  if(fl<6){const y=B-(fl+.5)*H,x=at(P[0],y).x+at(P[0],y).w/2+16;o+=`<path class="pulse" d="M${x} ${y-9}L${x+2.5} ${y-2.5}L${x+9} ${y}L${x+2.5} ${y+2.5}L${x} ${y+9}L${x-2.5} ${y+2.5}L${x-9} ${y}L${x-2.5} ${y-2.5}Z" fill="#ffb53d" stroke="#fff" stroke-width="1"/>`}
+  else o+='<path d="M172.5 48L180 30L187.5 48Z" fill="#ffd978"/>';
+  o+='<ellipse cx="180" cy="382" rx="72" ry="10" fill="#fff" opacity=".45"/>'
+   +'<path d="M0 392C50 380 110 396 170 389S300 380 360 392V450H0Z" fill="url(#d1)"/><path d="M0 392C50 380 110 396 170 389S300 380 360 392V398C300 390 230 400 170 396S50 388 0 399Z" fill="#c68a43" opacity=".35"/>'
+   +'<path d="M0 418C70 396 140 428 220 410S330 398 360 412V450H0Z" fill="#efc169"/><path d="M0 418C70 396 140 428 220 410S330 398 360 412V422C330 408 280 420 220 418S70 406 0 428Z" fill="#b87a3a" opacity=".35"/>'
+   +'<path d="M0 440C80 420 150 452 240 434S330 428 360 436V450H0Z" fill="#dba24f"/>';
   return o+'</svg>'}
 function starTrial(p){const pts=[[30,50],[62,24],[96,44],[132,18],[166,48],[202,26],[238,52],[270,28],[238,84],[190,92],[132,84],[76,90]];let o='<svg viewBox="0 0 300 110" role="img" aria-label="'+p+' of 12 stars lit" style="width:100%">';pts.forEach((a,i)=>{const b=pts[i+1];if(b)o+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${i+1<p?'#ffb53d':'#2d3144'}" stroke-width="2"/>`});pts.forEach((a,i)=>o+=`<circle cx="${a[0]}" cy="${a[1]}" r="6" fill="${i<p?'#ffb53d':'#2d3144'}"/>`);return o+'</svg>'}
 function viewTower(){
